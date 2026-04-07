@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>偉人エピソードリーダー</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (for JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts (Noto Sans JP) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Custom scrollbar for modal content */
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // --- Icons (Inline SVG Components) ---
+        const IconBase = ({ children, className }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Search = ({ className }) => (
+            <IconBase className={className}>
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+            </IconBase>
+        );
+
+        const BookOpen = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </IconBase>
+        );
+
+        const Clock = ({ className }) => (
+            <IconBase className={className}>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+            </IconBase>
+        );
+
+        const X = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+            </IconBase>
+        );
+
+        const User = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </IconBase>
+        );
+
+        const Tag = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l5 5a2 2 0 0 0 2.828 0l7-7a2 2 0 0 0 0-2.828l-5-5z" />
+                <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+            </IconBase>
+        );
+
+        const ChevronRight = ({ className }) => (
+            <IconBase className={className}>
+                <path d="m9 18 6-6-6-6" />
+            </IconBase>
+        );
+
+        const Filter = ({ className }) => (
+            <IconBase className={className}>
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </IconBase>
+        );
+
+        const Book = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </IconBase>
+        );
+
+        // --- Data ---
+        const storiesData = [
+          {
+            "number": 1,
+            "theme": "science_story",
+            "category": "発明家",
+            "field": "発明",
+            "person": "トーマス・エジソン",
+            "estimated_minutes": 2,
+            "text": "トーマス・エジソンは、子どものころ学校で「ぼんやりしている」と言われ、ほとんど授業を受けさせてもらえませんでした。家に帰ると、母親が静かに教えてくれました。本や実験道具を与えられ、エジソンは一日中、なぜだろうを考え続けました。\nある日、列車の中で薬品の実験をして火事を起こし、車掌に耳を強く叩かれます。それが原因で、彼の耳はほとんど聞こえなくなりました。\n周りの音が遠ざかると、不思議なことに、頭の中の考えは前よりはっきりしました。\n夜、暗い部屋の中で、彼は何千回も同じ実験を繰り返しました。光る材料を探し続け、また失敗し、また作り直しました。\n朝になると、机の上には黒く焦げた部品が並びます。\nある朝、細い糸が、ほんの少しだけ長く光りました。\nエジソンは椅子に座ったまま、それをじっと見ていました。\n\n何も言わず、ただ光を見ていました。\nうまくいかない時間も、考える時間になっている。\n\n気づかないところで、少しずつ前に進んでいる。"
+          },
+          {
+            "number": 2,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "医学",
+            "person": "野口英世",
+            "estimated_minutes": 2,
+            "text": "野口英世は、幼いころ囲炉裏に落ち、左手に大きなやけどを負いました。指はくっつき、思うように動きませんでした。\n学校でノートを書くのが遅く、みんなが帰ったあとも、一人だけ机に残ります。\nある日、村の医者が手術をしてくれました。\n包帯が外れたとき、英世は自分の指をゆっくり開きました。閉じて、また開きました。何度も何度も確かめました。\nそれから彼は、手を使う仕事を選びます。\n顕微鏡の前で、動かないほど集中し続けました。夜になっても、朝になっても、ほとんど同じ姿勢でした。\n外国で研究していたとき、研究室の窓から子どもたちが遊ぶ声が聞こえてきました。\n英世は顔を上げ、しばらくその音を聞いてから、また顕微鏡をのぞきました。\n小さなガラスの向こうに、原因となる菌が見えたのは、そのすぐあとでした。\n不自由なことが、進む道を決めることもある。\n\n続けた手の動きが、見えなかったものを見せてくれる。"
+          },
+          {
+            "number": 3,
+            "theme": "science_story",
+            "category": "教育者",
+            "field": "その他",
+            "person": "ヘレン・ケラー",
+            "estimated_minutes": 2,
+            "text": "ヘレン・ケラーは、見えず、聞こえず、言葉も持っていませんでした。\n手を振り回し、怒り、周りの人もどうしていいかわかりませんでした。\n家庭教師のサリバン先生は、毎日ヘレンの手に文字を書き続けました。\n何度書いても、意味は伝わりません。\nある日、井戸のそばで、水を手にかけながら「water」と書きました。\n冷たい水が流れ、手のひらに同じ動きが刻まれました。\nヘレンは急に静かになり、地面に触れました。\n石、土、服、空気、次々に触れ、そのたびに手を差し出しました。\n夕方になるころには、手の中の動きが「ものの名前」だと分かっていました。\nその日、ヘレンは眠るまで、何度も手を動かし続けていました。\n分かった瞬間、世界は急に広がる。\n\n言葉は、誰かとつながるためにある。"
+          },
+          {
+            "number": 4,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "宮沢賢治",
+            "estimated_minutes": 2,
+            "text": "宮沢賢治は、農学校の教師でした。\n授業のあと、よく生徒と畑に出ていました。\n雨の日も風の日も、土を触りながら作物の話をしました。\n教科書の話は短く、土の話は長くなりました。\n夜になると、ランプの下で物語を書きました。\n売れることはほとんどなく、原稿は机に積み重なります。\n冬の夜、窓の外で雪が静かに降っていました。\n賢治はペンを止め、しばらく外を見ていました。\nそれからまた紙に向かい、ゆっくり書き始めました。\n読み手のいない物語を、誰かのために書くように。\nすぐに届かなくても、残るものがある。\n\n静かな努力は、あとで誰かに届く。"
+          },
+          {
+            "number": 5,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "天文学",
+            "person": "ガリレオ・ガリレイ",
+            "estimated_minutes": 2,
+            "text": "ガリレオは、教会の天井で揺れるランプを見ていました。\n人々は祈っていましたが、彼だけは揺れ方を見ていました。\n長く揺れても、短く揺れても、時間はほとんど同じでした。\n家に帰ると、糸とおもりで何度も確かめました。\nやがて望遠鏡で空をのぞきます。\n月には傷のような影があり、星は無数にありました。\n周りの人は信じませんでした。\nそれでも彼は毎晩、同じ場所に望遠鏡を向けました。\n夜明け前、冷えた指で筒を押さえながら、\n\n暗い空に小さな光が動くのを、黙って追い続けました。\n疑問は、何度も確かめることで形になる。\n\n見続けた人だけが、変化に気づく。"
+          },
+          {
+            "number": 6,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "化学",
+            "person": "マリー・キュリー",
+            "estimated_minutes": 2,
+            "text": "マリー・キュリーは、古い小屋のような研究室で作業していました。\n冬は息が白く、夏は蒸し暑い場所でした。\n鉱石を砕き、大鍋で煮て、また冷まし、また砕きます。\n何年も続けました。\nある夜、真っ暗な部屋に入ると、机の上の試験管がかすかに光っていました。\n彼女はランプをつけず、その光を見つめました。\nそれは静かな光でした。\n音もなく、ただそこにありました。\n彼女は椅子に座り、その光が消えるまで動きませんでした。\n長く続けた先に、静かな発見がある。\n\n光は、大きな音を立てずに現れる。"
+          },
+          {
+            "number": 7,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "織田信長",
+            "estimated_minutes": 2,
+            "text": "信長は城の庭に並べられた鉄砲を見ていました。\n\n火縄を点け、順に撃たせます。\n三人一組で交代しながら撃つよう命じました。\n\n煙が消える前に次の音が響きます。\n何度も並びを変え、距離を測りました。\n\n雨の中でも続けます。\nやがて途切れない音が戦場に広がりました。\n新しい方法は、試して初めて力になる。\n\n考え方を変えると景色も変わる。"
+          },
+          {
+            "number": 8,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "徳川家康",
+            "estimated_minutes": 2,
+            "text": "家康は戦の前夜、灯の下で地図を見ていました。\n\n兵の位置を何度も置き直します。\n急がず、退く道も残しました。\n\n味方を休ませ、朝を待ちます。\n霧が晴れるころ、軍は整っていました。\n\n家康は静かに立ち上がりました。\n急がない判断が大きな結果を生む。\n\n待つことも選択のひとつになる。"
+          },
+          {
+            "number": 9,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "天文学",
+            "person": "伊能忠敬",
+            "estimated_minutes": 2,
+            "text": "忠敬は毎日同じ時刻に歩き始めました。\n\n縄と方位磁石を手に海岸を測ります。\n雨の日も歩幅を変えません。\n\n夜は数字を書き写します。\n年を重ねても歩き続けました。\n\n地図の線が少しずつ閉じていきます。\n小さな一歩が全体を形にする。\n\n続けることで遠くまで届く。"
+          },
+          {
+            "number": 10,
+            "theme": "science_story",
+            "category": "教育者",
+            "field": "その他",
+            "person": "福沢諭吉",
+            "estimated_minutes": 2,
+            "text": "諭吉は外国の本を開き、知らない言葉を書き写しました。\n\n意味が分からず何度も辞書を引きます。\n灯が消えかけてもページを閉じません。\n\n同じ文を読み直しました。\nやがて文章がつながって読めました。\n\n彼は静かに本を置きました。\n分からない時間が理解をつくる。\n\n学ぶ力は繰り返しで育つ。"
+          },
+          {
+            "number": 11,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "医学",
+            "person": "杉田玄白",
+            "estimated_minutes": 2,
+            "text": "玄白は解剖書と人体を見比べていました。\n\n書かれている形と違います。\n仲間と確認しながら訳し直しました。\n\n何度も書き換えます。\n朝になるころ、言葉が整いました。\n\n机に新しい本が残りました。\n確かめる勇気が知識を変える。\n\n事実は観察の中にある。"
+          },
+          {
+            "number": 12,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "医学",
+            "person": "フローレンス・ナイチンゲール",
+            "estimated_minutes": 2,
+            "text": "夜の病院で彼女は灯りを持って歩きました。\n\n一人ずつ様子を見て回ります。\n記録を続け、数字を並べました。\n\n環境を整えると回復が増えます。\n静かな廊下をもう一度巡りました。\n\n灯りが床に揺れていました。\n気づいたことを書き続けると改善につながる。\n\n優しさも観察から始まる。"
+          },
+          {
+            "number": 13,
+            "theme": "science_story",
+            "category": "実業家",
+            "field": "その他",
+            "person": "渋沢栄一",
+            "estimated_minutes": 2,
+            "text": "栄一は帳簿の数字を確かめていました。\n\n利益だけでなく働く人の様子を見ます。\n仕組みを整え、約束を決めました。\n\n長く続く形を選びます。\n夜、帳簿を閉じました。\n\n静かな机に印が残りました。\n続く仕組みが社会を支える。\n\n信用は積み重ねで生まれる。"
+          },
+          {
+            "number": 14,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "医学",
+            "person": "北里柴三郎",
+            "estimated_minutes": 2,
+            "text": "北里は培養器の温度を何度も調整しました。\n\n少しずれると菌は育ちません。\n日をまたいで観察を続けます。\n\n変化を記録しました。\nやがて同じ形が増えていきました。\n\n彼は時間を書き込みました。\n正確さが結果をつくる。\n\n小さな差を大切にする。"
+          },
+          {
+            "number": 15,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "板垣退助",
+            "estimated_minutes": 2,
+            "text": "板垣は集会で人々の声を聞いていました。\n\n意見はまとまりません。\nそれでも話を続けます。\n\n紙に考えを書きました。\n夜遅く、議論は静まりました。\n\n机に提案書が残りました。\n話し合いが形を生む。\n\n違いの中から方向が見える。"
+          },
+          {
+            "number": 16,
+            "theme": "science_story",
+            "category": "女王",
+            "field": "その他",
+            "person": "卑弥呼",
+            "estimated_minutes": 2,
+            "text": "人々は争いを続けていました。\n\n卑弥呼は祈りを行い、言葉を伝えます。\n各地の使者が集まりました。\n\n決まりを定めます。\nやがて国は落ち着きました。\n\n火の煙がまっすぐ上がりました。\n信頼は人を集める。\n\n落ち着いた判断が平和を保つ。"
+          },
+          {
+            "number": 17,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "聖徳太子",
+            "estimated_minutes": 2,
+            "text": "太子は人々の訴えを順に聞いていました。\n\n一度に十人の話を受け止めたと伝えられます。\n言葉を書き留め、決まりを整えました。\n\n争いを減らすための順序を考えます。\n役人たちはその文を読み返しました。\n\n広間に静かな時間が流れました。\n話を聞くことが道を開く。\n\n決まりは人を助けるためにある。"
+          },
+          {
+            "number": 18,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "西郷隆盛",
+            "estimated_minutes": 2,
+            "text": "西郷は城下の道を歩きながら人々の様子を見ていました。\n\n声をかけられると足を止めます。\n急がず、考えてから動きました。\n\n仲間と向き合い続けます。\n夜、灯の前で手紙を書きました。\n\n机に置いた筆が乾いていました。\n人を見ることが判断を支える。\n\n大きな決断ほど静かに生まれる。"
+          },
+          {
+            "number": 19,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "坂本龍馬",
+            "estimated_minutes": 2,
+            "text": "龍馬は海を見ながら地図を広げていました。\n\n違う立場の者同士を結ぶ道を探します。\n手紙を書き、また書き直しました。\n\n会う約束を重ねます。\n夜明け、船が港を離れました。\n\n波がゆっくり広がりました。\n人をつなぐことで流れは変わる。\n\n新しい道は対話から始まる。"
+          },
+          {
+            "number": 20,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "紫式部",
+            "estimated_minutes": 2,
+            "text": "宮中で彼女は物語を書き続けました。\n\n人の心の動きを丁寧に記します。\n夜が更けても筆を止めません。\n\n言葉を選び直します。\n朝、巻物を閉じました。\n\n静かな光が差し込みました。\n心を見つめると世界が広がる。\n\n表現は人の気持ちを残す。"
+          },
+          {
+            "number": 21,
+            "theme": "science_story",
+            "category": "僧侶",
+            "field": "その他",
+            "person": "空海",
+            "estimated_minutes": 2,
+            "text": "空海は筆をとり文字を書きました。\n\n形と意味を整えます。\n旅を続け、多くを学びました。\n\n帰国後も教えを伝えます。\n寺の庭で子どもが字をなぞっていました。\n\n墨の跡がゆっくり乾きました。\n学んだことは分けると深まる。\n\n教えることで理解が広がる。"
+          },
+          {
+            "number": 22,
+            "theme": "science_story",
+            "category": "僧侶",
+            "field": "その他",
+            "person": "最澄",
+            "estimated_minutes": 2,
+            "text": "山の上で最澄は経を読み続けました。\n\n静かな時間の中で考えます。\n人々に分かりやすく伝えようとしました。\n\n言葉を選び直します。\n朝霧が晴れるころ、鐘が鳴りました。\n\n声が山に広がりました。\n伝える工夫が学びを支える。\n\n続ける姿が信頼になる。"
+          },
+          {
+            "number": 23,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "北条政子",
+            "estimated_minutes": 2,
+            "text": "政子は御家人の前に立ち、言葉を選びました。\n\n揺れる人々の気持ちをまとめます。\n一人ずつに目を向けて話しました。\n\n場の空気が整います。\nやがて人々は静かにうなずきました。\n\n庭に風が通りました。\n言葉は人の心を動かす。\n\n落ち着きが力になる。"
+          },
+          {
+            "number": 24,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "徳川吉宗",
+            "estimated_minutes": 2,
+            "text": "吉宗は町を歩き、様子を確かめました。\n\n書かれた報告だけでは足りません。\n倹約の決まりを見直します。\n\n無理のない形を考えました。\n夜、帳面を閉じました。\n\n灯が静かに揺れていました。\n実際を見ると判断が変わる。\n\n続けられる形が長く残る。"
+          },
+          {
+            "number": 25,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "与謝野晶子",
+            "estimated_minutes": 2,
+            "text": "晶子は机に向かい短い歌を書きました。\n\n思いを率直に言葉にします。\n何度も書き直し、声に出して読みました。\n\n響きを確かめます。\n朝、原稿をまとめました。\n\n紙の上に言葉が並びました。\n自分の言葉が新しい表現になる。\n\n感じたことを形にしてよい。"
+          },
+          {
+            "number": 26,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "生物",
+            "person": "南方熊楠",
+            "estimated_minutes": 2,
+            "text": "熊楠は森でノートを広げました。\n\n小さな菌を一つずつ記録します。\n長い時間をかけ観察しました。\n\n同じ場所に通い続けます。\n雨上がり、葉の上に模様が広がりました。\n\n彼は静かに写し取りました。\n自然は細かく見ると姿を変える。\n\n続けた観察が理解につながる。"
+          },
+          {
+            "number": 27,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "源頼朝",
+            "estimated_minutes": 2,
+            "text": "頼朝は御家人たちの名を書き並べていました。\n\nそれぞれの役割を決めていきます。\n遠くの土地の報告も確かめました。\n\n一つずつ印を加えます。\n夕方、文書を巻きました。\n\n静かに秩序が整いました。\n役割を決めると力が集まる。\n\n仕組みが安定を生む。"
+          },
+          {
+            "number": 28,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "足利義満",
+            "estimated_minutes": 2,
+            "text": "義満は庭の景色を眺めていました。\n\n建物と池の配置を何度も見直します。\n遠くの文化を取り入れました。\n\n違いを組み合わせます。\n朝の光が金色に反射しました。\n\n水面が静かに揺れました。\n違いを受け入れると新しい形が生まれる。\n\n交流が文化を豊かにする。"
+          },
+          {
+            "number": 29,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "武田信玄",
+            "estimated_minutes": 2,
+            "text": "信玄は地形図を前に兵の配置を考えていました。\n\n山と川の位置を確かめます。\n急がず準備を整えました。\n\n動く時を待ちます。\n風が旗を揺らしました。\n\n軍は整然と進みました。\n状況を見ることが判断を助ける。\n\n備えが結果を変える。"
+          },
+          {
+            "number": 30,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "上杉謙信",
+            "estimated_minutes": 2,
+            "text": "謙信は戦の前に静かに祈りました。\n\n勝ち負けだけを見ていません。\n約束を守ることを重んじました。\n\n敵にも礼を尽くします。\n戦が終わり、武具を収めました。\n\n夜の風が吹きました。\n信念は行動に表れる。\n\n誠実さは信頼を生む。"
+          },
+          {
+            "number": 31,
+            "theme": "science_story",
+            "category": "俳人",
+            "field": "その他",
+            "person": "松尾芭蕉",
+            "estimated_minutes": 2,
+            "text": "芭蕉は道を歩きながら句を考えていました。\n\n景色の変化を言葉にします。\n短い言葉を何度も直しました。\n\n余分を削ります。\n夕暮れ、紙に一行を書きました。\n\n静かな風が通りました。\n少ない言葉が深く伝える。\n\n感じた瞬間を大切にする。"
+          },
+          {
+            "number": 32,
+            "theme": "science_story",
+            "category": "外交官",
+            "field": "その他",
+            "person": "杉原千畝",
+            "estimated_minutes": 2,
+            "text": "杉原は机に向かい書類を書き続けました。\n\n次々に押される判を止めません。\n時間が迫っていました。\n\nそれでも手を動かし続けます。\n列車が出る直前まで書きました。\n\n紙が人々の手に渡りました。\n行動が誰かを支えることがある。\n\n迷ったときは人を基準にする。"
+          },
+          {
+            "number": 33,
+            "theme": "science_story",
+            "category": "教育者",
+            "field": "その他",
+            "person": "新渡戸稲造",
+            "estimated_minutes": 2,
+            "text": "稲造は外国の学生に日本の考え方を説明しました。\n\n言葉を選び、例えを考えます。\n違いを比べながら書き進めました。\n\n理解できる形を探します。\n本を閉じ、静かに机に置きました。\n\n考えが橋のようにつながりました。\n説明することで互いに理解が進む。\n\n違いを知ると距離が縮まる。"
+          },
+          {
+            "number": 34,
+            "theme": "science_story",
+            "category": "教育者",
+            "field": "その他",
+            "person": "嘉納治五郎",
+            "estimated_minutes": 2,
+            "text": "嘉納は道場で礼を重ねました。\n\n技だけでなく姿勢を整えます。\n何度も基本を繰り返しました。\n\n学び方を考えます。\n稽古が終わり、道場が静まりました。\n\n畳に足跡が残りました。\n基本が上達を支える。\n\n学び方も大切な力になる。"
+          },
+          {
+            "number": 35,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "伊藤博文",
+            "estimated_minutes": 2,
+            "text": "伊藤は海外の制度を調べていました。\n\n文書を比較し書き写します。\n日本に合う形を考えました。\n\n議論を重ねます。\n夜遅く、案をまとめました。\n\n机に新しい構想が残りました。\n比べることで選ぶ力が生まれる。\n\n仕組みは考えて作られる。"
+          },
+          {
+            "number": 36,
+            "theme": "science_story",
+            "category": "教育者",
+            "field": "その他",
+            "person": "大隈重信",
+            "estimated_minutes": 2,
+            "text": "大隈は演説の原稿を書き直していました。\n\n伝わる言葉を探します。\n何度も読み上げて確かめました。\n\n表現を整えます。\n朝、原稿を閉じました。\n\n声が会場に広がりました。\n言葉は準備で磨かれる。\n\n伝える工夫が理解を助ける。"
+          },
+          {
+            "number": 37,
+            "theme": "science_story",
+            "category": "俳人",
+            "field": "その他",
+            "person": "正岡子規",
+            "estimated_minutes": 2,
+            "text": "子規は机に向かい、短い句を書き直していました。\n\n余分な言葉を一つずつ消します。\n窓の外の景色を何度も見て確かめました。\n\n感じたままに表します。\n筆を置くと、紙に静かな一行が残りました。\n\n朝の光が差し込みました。\n見たままを書くと伝わる。\n\n丁寧に選ぶと言葉は生きる。"
+          },
+          {
+            "number": 38,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "夏目漱石",
+            "estimated_minutes": 2,
+            "text": "漱石は原稿を読み返していました。\n\n人物の気持ちが自然か確かめます。\n書き直し、また読み直します。\n\n夜が更けても続きました。\n最後にページを閉じました。\n\n静かな机に物語が残りました。\n考えるほど表現は深くなる。\n\n読み返しが作品を育てる。"
+          },
+          {
+            "number": 39,
+            "theme": "science_story",
+            "category": "教育者",
+            "field": "その他",
+            "person": "津田梅子",
+            "estimated_minutes": 2,
+            "text": "梅子は教室で英語の本を開きました。\n\n分かりやすい言葉を選びます。\n生徒の様子を見て教え方を変えました。\n\n繰り返し練習します。\n授業後もノートを直していました。\n\n夕方の光が机に伸びました。\n相手に合わせると学びが進む。\n\n教え方も工夫できる。"
+          },
+          {
+            "number": 40,
+            "theme": "science_story",
+            "category": "美術家",
+            "field": "その他",
+            "person": "岡倉天心",
+            "estimated_minutes": 2,
+            "text": "天心は美術品を前に長く見つめました。\n\n形と意味を考えます。\n海外の人にも伝わる言葉を探しました。\n\n説明を書き直します。\nやがて本を閉じました。\n\n静かな余韻が残りました。\n文化は説明で広がる。\n\n理解は対話から生まれる。"
+          },
+          {
+            "number": 41,
+            "theme": "science_story",
+            "category": "民俗学者",
+            "field": "その他",
+            "person": "柳田國男",
+            "estimated_minutes": 2,
+            "text": "柳田は村を歩き話を聞きました。\n\n昔の習慣を書き留めます。\n同じ話を別の場所でも確かめました。\n\n記録を重ねます。\n夜、ノートをまとめました。\n\n声が文字になりました。\n集めることで歴史が見える。\n\n記録は未来に残る。"
+          },
+          {
+            "number": 42,
+            "theme": "science_story",
+            "category": "芸術家",
+            "field": "その他",
+            "person": "高村光雲",
+            "estimated_minutes": 2,
+            "text": "光雲は木を前に彫刻刀を動かしました。\n\n少しずつ形を整えます。\n離れて見て、また削ります。\n\n細部を確かめます。\n最後に道具を置きました。\n\n像が静かに立っていました。\n丁寧な作業が完成をつくる。\n\n焦らず進めることが大切。"
+          },
+          {
+            "number": 43,
+            "theme": "science_story",
+            "category": "学者",
+            "field": "その他",
+            "person": "本居宣長",
+            "estimated_minutes": 2,
+            "text": "宣長は古い書物を読み解いていました。\n\n言葉の意味を一つずつ確かめます。\n何度も読み直しました。\n\n別の文と比べます。\n朝、注釈を書き終えました。\n\n机に開いた本が残りました。\n理解は繰り返しで深まる。\n\n比べると意味がはっきりする。"
+          },
+          {
+            "number": 44,
+            "theme": "science_story",
+            "category": "画家",
+            "field": "その他",
+            "person": "菱川師宣",
+            "estimated_minutes": 2,
+            "text": "師宣は版木に線を描きました。\n\n刷ると同じ絵が広がります。\n色を変え、構図を整えます。\n\n多くの人に届きました。\n乾いた紙を重ねました。\n\n絵が町へ運ばれました。\n工夫で表現は広がる。\n\n伝える方法も大切な技。"
+          },
+          {
+            "number": 45,
+            "theme": "science_story",
+            "category": "学者",
+            "field": "その他",
+            "person": "貝原益軒",
+            "estimated_minutes": 2,
+            "text": "益軒は日々の暮らしを書き残しました。\n\n健康の習慣を記録します。\n試して確かめました。\n\n生活を整えます。\n書物を閉じました。\n\n静かな生活が続きました。\n続ける習慣が体を守る。\n\n日々の工夫が役に立つ。"
+          },
+          {
+            "number": 46,
+            "theme": "science_story",
+            "category": "発明家",
+            "field": "発明",
+            "person": "平賀源内",
+            "estimated_minutes": 2,
+            "text": "源内は新しい仕組みを試しました。\n\n電気の道具を動かします。\nうまくいかず作り直します。\n\nまた試します。\n装置が動きました。\n\n彼は静かに確かめました。\n試すことで可能性が広がる。\n\n発想は行動で形になる。"
+          },
+          {
+            "number": 47,
+            "theme": "science_story",
+            "category": "農政家",
+            "field": "その他",
+            "person": "二宮尊徳",
+            "estimated_minutes": 2,
+            "text": "尊徳は畑の前で立ち止まりました。\n\n土の様子を確かめます。\n少しずつ手を入れ、整えていきました。\n\n毎日同じ作業を続けます。\nやがて畑に芽がそろいました。\n\n風が静かに通りました。\n小さな努力は形になる。\n\n続けることが力を育てる。"
+          },
+          {
+            "number": 48,
+            "theme": "science_story",
+            "category": "実業家",
+            "field": "工学",
+            "person": "福澤桃介",
+            "estimated_minutes": 2,
+            "text": "桃介は川の流れを見つめていました。\n\n水の力をどう使うか考えます。\n場所を測り、図を描きました。\n\n工事を進めます。\n水車が回り始めました。\n\n音が谷に広がりました。\n自然を活かすと暮らしが変わる。\n\n観察が工夫につながる。"
+          },
+          {
+            "number": 49,
+            "theme": "science_story",
+            "category": "詩人",
+            "field": "その他",
+            "person": "野口雨情",
+            "estimated_minutes": 2,
+            "text": "雨情は子どもたちの歌声を聞いていました。\n\n言葉の響きを確かめます。\n何度も書き直しました。\n\nやさしい言葉を選びます。\n夕方、歌が広がりました。\n\n静かな空に残りました。\n伝わる言葉はやさしい。\n\n聞くことで表現が生まれる。"
+          },
+          {
+            "number": 50,
+            "theme": "science_story",
+            "category": "武将",
+            "field": "その他",
+            "person": "河合継之助",
+            "estimated_minutes": 2,
+            "text": "継之助は地図を前に考えていました。\n\n町を守る方法を探します。\n新しい武器の使い方を学びました。\n\n備えを整えます。\n夜、計画をまとめました。\n\n灯が揺れていました。\n学ぶことで選択が増える。\n\n準備が判断を支える。"
+          },
+          {
+            "number": 51,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "伊藤左千夫",
+            "estimated_minutes": 2,
+            "text": "左千夫は田を見ながら歌を考えました。\n\n日々の暮らしを言葉にします。\n書いては直し、また書きます。\n\n短い表現を整えます。\n紙に一首が残りました。\n\n夕焼けが映りました。\n身近なことに価値がある。\n\n感じたことを残してよい。"
+          },
+          {
+            "number": 52,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "高橋是清",
+            "estimated_minutes": 2,
+            "text": "是清は帳簿の数字を見直していました。\n\n状況を確かめます。\n思い切った案を選びました。\n\n議論を続けます。\nやがて数字が落ち着きました。\n\n机に静かな空気が戻りました。\n判断には勇気がいる。\n\n状況を見る力が大切。"
+          },
+          {
+            "number": 53,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "与謝野鉄幹",
+            "estimated_minutes": 2,
+            "text": "鉄幹は仲間と詩を読み合いました。\n\n表現を確かめ合います。\n意見を受けて書き直しました。\n\n言葉が整います。\n夜、原稿をまとめました。\n\n声が静かに残りました。\n学びは対話で深まる。\n\n仲間が成長を助ける。"
+          },
+          {
+            "number": 54,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "新美南吉",
+            "estimated_minutes": 2,
+            "text": "南吉は物語を書きながら立ち止まりました。\n\n登場人物の気持ちを考えます。\n短い話を何度も直しました。\n\n余分を削ります。\n紙に静かな結末が残りました。\n\n窓の光が差しました。\n相手を思うと物語が生まれる。\n\nやさしさは想像から始まる。"
+          },
+          {
+            "number": 55,
+            "theme": "science_story",
+            "category": "思想家",
+            "field": "その他",
+            "person": "中江兆民",
+            "estimated_minutes": 2,
+            "text": "兆民は海外の本を訳していました。\n\n言葉を慎重に選びます。\n意味を確かめながら書き進めました。\n\n何度も読み直しました。\n朝、本を閉じました。\n\n新しい言葉が残りました。\n理解は時間をかけて育つ。\n\n言葉は考えを広げる。"
+          },
+          {
+            "number": 56,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "生物",
+            "person": "牧野富太郎",
+            "estimated_minutes": 2,
+            "text": "牧野は植物を採集して記録しました。\n\n形と特徴を書き残します。\n名前を確かめるため調べ続けました。\n\n図を描きます。\n標本が増えていきました。\n\n机に自然が広がりました。\n興味が学びを深める。\n\n観察が知識になる。"
+          },
+          {
+            "number": 57,
+            "theme": "science_story",
+            "category": "作家",
+            "field": "その他",
+            "person": "小泉八雲",
+            "estimated_minutes": 2,
+            "text": "八雲は町を歩き、人の話に耳を傾けました。\n\n昔から伝わる出来事を丁寧に聞き取ります。\n夜、灯の下で文章にしました。\n\n言葉を選び直します。\n朝、原稿を閉じました。\n\n物語が静かに残りました。\n話を聞くと文化が見える。\n\n記録は思い出を未来へ運ぶ。"
+          },
+          {
+            "number": 58,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "天文学",
+            "person": "岡田武松",
+            "estimated_minutes": 2,
+            "text": "岡田は毎日の天気を記録しました。\n\n気温と風を同じ時刻に測ります。\n変化を比べ続けました。\n\n規則が少しずつ見えます。\n地図に線を引きました。\n\n雲の流れがつながりました。\n積み重ねた記録が予測を助ける。\n\n続ける観察が役に立つ。"
+          },
+          {
+            "number": 59,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "生物",
+            "person": "南方熊楠",
+            "estimated_minutes": 2,
+            "text": "熊楠は森の中で小さな菌を探しました。\n\n同じ場所に何度も通います。\n形をスケッチし記録しました。\n\n違いを見分けます。\n雨上がりの葉に模様が広がりました。\n\n彼は静かに写しました。\n細かく見ると新しい世界がある。\n\n興味が発見につながる。"
+          },
+          {
+            "number": 60,
+            "theme": "science_story",
+            "category": "政治家",
+            "field": "その他",
+            "person": "田中正造",
+            "estimated_minutes": 2,
+            "text": "正造は川の様子を確かめ続けました。\n\n現地を歩き、人の話を聞きます。\n記録を集め、訴えをまとめました。\n\nあきらめず伝えます。\n川面が夕日に光りました。\n\n彼は立ち止まりました。\n現場を見ると問題が分かる。\n\n声を上げることが改善の始まり。"
+          },
+          {
+            "number": 61,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "工学",
+            "person": "本多光太郎",
+            "estimated_minutes": 2,
+            "text": "本多は金属を熱し、冷まし、また試しました。\n\n性質の違いを確かめます。\n何度も配合を変えました。\n\n強さが増します。\n試験片が曲がらず残りました。\n\n机に記録が並びました。\n試行錯誤が性能を高める。\n\n小さな改善が成果になる。"
+          },
+          {
+            "number": 62,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "化学",
+            "person": "高峰譲吉",
+            "estimated_minutes": 2,
+            "text": "譲吉は成分を分ける作業を続けました。\n\n温度を変え、抽出します。\n慎重に確かめました。\n\n同じ結果が出ます。\n結晶が静かに現れました。\n\n彼はノートを書きました。\n丁寧な操作が成功を生む。\n\n正確さが信頼につながる。"
+          },
+          {
+            "number": 63,
+            "theme": "science_story",
+            "category": "発明家",
+            "field": "工学",
+            "person": "八木秀次",
+            "estimated_minutes": 2,
+            "text": "八木は電波の向きを調整しました。\n\n角度を少しずつ変えます。\n受信の強さを測りました。\n\n最も届く方向を見つけます。\n装置が安定しました。\n\n記録が整いました。\n工夫で伝わり方が変わる。\n\n試すほど性能が上がる。"
+          },
+          {
+            "number": 64,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "物理",
+            "person": "湯川秀樹",
+            "estimated_minutes": 2,
+            "text": "湯川は式を書き直し続けました。\n\n理論を組み立てます。\n計算を何度も確かめました。\n\n形が整います。\n黒板の前で手を止めました。\n\n静かな答えが残りました。\n考え抜くと理解が深まる。\n\n理論も積み重ねで生まれる。"
+          },
+          {
+            "number": 65,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "物理",
+            "person": "朝永振一郎",
+            "estimated_minutes": 2,
+            "text": "朝永は式の順序を変えて計算しました。\n\n無限に増える数を整理します。\n何度も試しました。\n\n形がまとまります。\nチョークを置きました。\n\n黒板が静かになりました。\n方法を変えると解決する。\n\n工夫が難問をほどく。"
+          },
+          {
+            "number": 66,
+            "theme": "science_story",
+            "category": "科学者",
+            "field": "物理",
+            "person": "小柴昌俊",
+            "estimated_minutes": 2,
+            "text": "小柴は観測装置の記録を確かめました。\n\nわずかな信号を探します。\n雑音を取り除きます。\n\n結果を比較しました。\n小さな反応が残りました。\n\n彼は記録を見つめました。\n小さな証拠が発見を支える。\n\n注意深さが成果につながる。"
+          }
+        ];
+
+        function App() {
+          const [activeCategory, setActiveCategory] = useState('すべて');
+          const [searchTerm, setSearchTerm] = useState('');
+          const [selectedStory, setSelectedStory] = useState(null);
+
+          // カテゴリのユニークリストを作成
+          const categories = useMemo(() => {
+            const cats = new Set(storiesData.map(s => s.category));
+            return ['すべて', ...Array.from(cats)];
+          }, []);
+
+          // フィルタリング処理
+          const filteredStories = useMemo(() => {
+            return storiesData.filter(story => {
+              const matchesCategory = activeCategory === 'すべて' || story.category === activeCategory;
+              const matchesSearch = 
+                story.person.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                story.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                story.category.toLowerCase().includes(searchTerm.toLowerCase());
+              return matchesCategory && matchesSearch;
+            });
+          }, [activeCategory, searchTerm]);
+
+          // モーダルを閉じる
+          const closeModal = () => setSelectedStory(null);
+
+          // カテゴリごとの色分け
+          const getCategoryColor = (category) => {
+            const colors = {
+              '科学者': 'bg-blue-100 text-blue-800',
+              '発明家': 'bg-amber-100 text-amber-800',
+              '教育者': 'bg-emerald-100 text-emerald-800',
+              '作家': 'bg-purple-100 text-purple-800',
+              '武将': 'bg-red-100 text-red-800',
+              '政治家': 'bg-gray-100 text-gray-800',
+              'その他': 'bg-slate-100 text-slate-800'
+            };
+            return colors[category] || 'bg-slate-100 text-slate-800';
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+              {/* ヘッダー */}
+              <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-indigo-600 rounded-lg">
+                        <Book className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h1 className="text-xl font-bold text-slate-900">偉人エピソード集</h1>
+                        <p className="text-xs text-slate-500">心に響く66の物語</p>
+                      </div>
+                    </div>
+                    
+                    <div className="relative w-full md:w-96">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-slate-400" />
+                      </div>
+                      <input
+                        type="text"
+                        className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+                        placeholder="人物名やキーワードで検索..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                      {searchTerm && (
+                        <button 
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                          onClick={() => setSearchTerm('')}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* カテゴリフィルター */}
+                  <div className="py-3 flex overflow-x-auto pb-4 hide-scrollbar gap-2">
+                    <div className="flex items-center text-sm text-slate-500 mr-2 flex-shrink-0">
+                      <Filter className="w-4 h-4 mr-1" />
+                      絞り込み:
+                    </div>
+                    {categories.map(category => (
+                      <button
+                        key={category}
+                        onClick={() => setActiveCategory(category)}
+                        className={`
+                          px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200
+                          ${activeCategory === category 
+                            ? 'bg-indigo-600 text-white shadow-md transform scale-105' 
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}
+                        `}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </header>
+
+              {/* メインコンテンツ */}
+              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-semibold text-slate-800">
+                    {activeCategory}のストーリー
+                    <span className="ml-2 text-sm font-normal text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">
+                      {filteredStories.length}件
+                    </span>
+                  </h2>
+                </div>
+
+                {filteredStories.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredStories.map((story) => (
+                      <div 
+                        key={story.number}
+                        className="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-slate-100 hover:border-indigo-100 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden relative"
+                        onClick={() => setSelectedStory(story)}
+                      >
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        <div className="p-6 flex-1 flex flex-col">
+                          <div className="flex justify-between items-start mb-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${getCategoryColor(story.category)}`}>
+                              {story.category}
+                            </span>
+                            <span className="text-xs text-slate-400 font-mono">#{String(story.number).padStart(3, '0')}</span>
+                          </div>
+                          
+                          <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-indigo-700 transition-colors flex items-center gap-2">
+                            <User className="w-4 h-4 text-slate-400" />
+                            {story.person}
+                          </h3>
+                          
+                          <div className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed flex-1">
+                            {story.text}
+                          </div>
+                          
+                          <div className="flex items-center justify-between text-xs text-slate-500 mt-auto pt-4 border-t border-slate-100">
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <Tag className="w-3 h-3" />
+                                {story.field}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {story.estimated_minutes}分
+                              </span>
+                            </div>
+                            <span className="flex items-center text-indigo-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 transform duration-300">
+                              読む <ChevronRight className="w-4 h-4" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
+                    <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900">該当するエピソードが見つかりません</h3>
+                    <p className="text-slate-500 mt-2">検索条件を変えてお試しください</p>
+                    <button 
+                      onClick={() => {setSearchTerm(''); setActiveCategory('すべて');}}
+                      className="mt-4 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
+                    >
+                      条件をクリア
+                    </button>
+                  </div>
+                )}
+              </main>
+
+              {/* フッター */}
+              <footer className="bg-slate-900 text-slate-400 py-8 mt-12">
+                <div className="max-w-7xl mx-auto px-4 text-center">
+                  <p className="text-sm">© 2024 Great People Stories. All rights reserved.</p>
+                  <p className="text-xs mt-2 text-slate-500">偉人たちの小さな物語から、大きな学びを。</p>
+                </div>
+              </footer>
+
+              {/* 詳細モーダル */}
+              {selectedStory && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
+                  <div 
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+                    onClick={closeModal}
+                  ></div>
+                  
+                  <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+                    {/* モーダルヘッダー */}
+                    <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(selectedStory.category)}`}>
+                            {selectedStory.category}
+                          </span>
+                          <span className="text-xs text-slate-400">#{selectedStory.number}</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-900">{selectedStory.person}</h2>
+                      </div>
+                      <button 
+                        onClick={closeModal}
+                        className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    
+                    {/* モーダル本文 */}
+                    <div className="p-6 sm:p-8 overflow-y-auto leading-loose text-lg text-slate-800 font-serif whitespace-pre-line modal-content">
+                      {selectedStory.text}
+                    </div>
+                    
+                    {/* モーダルフッター */}
+                    <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-2xl flex justify-between items-center text-sm text-slate-500">
+                      <div className="flex gap-4">
+                        <span className="flex items-center gap-1">
+                          <Tag className="w-4 h-4" />
+                          {selectedStory.field}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          読了目安: {selectedStory.estimated_minutes}分
+                        </span>
+                      </div>
+                      <button 
+                        onClick={closeModal}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                      >
+                        閉じる
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

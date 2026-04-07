@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="放課後等デイサービスや児童発達支援の個別支援計画を作成するための補助ツールです。" />
+  <title>個別支援計画生成AI</title>
+
+  <!-- Tailwind CSS の読み込み（フォームプラグインを利用して入力要素を綺麗にします） -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7YCJMME1C"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-M7YCJMME1C');
+  </script>
+
+  <!-- Google AdSense -->
+  <script data-ad-client="ca-pub-3429918276707630" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+  <style>
+    /* Tailwindでカバーしきれない細かな調整 */
+    #result-container {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-12">
+  
+  <!-- ヘッダー -->
+  <header class="bg-green-600 text-white py-4 shadow-md sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <h1 class="text-2xl font-bold tracking-wider"><a href="#" class="hover:text-green-200 transition">個別支援計画生成AI</a></h1>
+      <span class="text-sm font-medium text-green-100">エデアルAIを参考にさせていただいています</span>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 mt-8">
+    
+    <!-- 概要セクション -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+      <h2 class="text-xl font-bold mb-3 text-slate-800 border-b pb-2">このツールについて</h2>
+      <p class="text-slate-600 mb-2 leading-relaxed">
+        放課後等デイサービス（児童発達支援）で、個別支援計画をスムーズに作成にするための補助ツールです。<span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">v1.0.0</span>
+      </p>
+      <p class="text-slate-600 mb-4 leading-relaxed">
+        児発管の支援への思いを、AIに言語化させるプロンプト（指示文）を作成します。必要な項目を選択・入力後、作成されたプロンプトをAI（ChatGPTやGeminiなど）にコピペしてお願いするだけです。
+      </p>
+      <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r">
+        <p class="text-amber-800 text-sm font-bold flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          ご注意：個人が特定できる情報（実名など）は絶対に入力しないでください。
+        </p>
+      </div>
+    </section>
+
+    <!-- 入力フォーム -->
+    <form id="recordForm" class="space-y-6">
+      
+      <div class="flex justify-end mb-4">
+        <button type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm" id="fullClearButton">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          全項目クリア
+        </button>
+      </div>
+
+      <!-- 年齢区分 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">年齢区分 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="grade">クリア</button>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="grade" value="低学年" class="text-blue-600 focus:ring-blue-500"> <span>低学年</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="grade" value="中学年" class="text-blue-600 focus:ring-blue-500"> <span>中学年</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="grade" value="高学年" class="text-blue-600 focus:ring-blue-500"> <span>高学年</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="grade" value="中学生" class="text-blue-600 focus:ring-blue-500"> <span>中学生</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 性別 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">性別 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="gender">クリア</button>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="gender" value="男" class="text-blue-600 focus:ring-blue-500"> <span>男</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="gender" value="女" class="text-blue-600 focus:ring-blue-500"> <span>女</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 大まかな支援方針 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">大まかな支援方針 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="shienPolicy">クリア</button>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="shienPolicy" value="学校生活をより良くしたい" class="text-blue-600 focus:ring-blue-500"> <span>学校生活をより良くしたい</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="shienPolicy" value="家庭生活をより良くしたい" class="text-blue-600 focus:ring-blue-500"> <span>家庭生活をより良くしたい</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="shienPolicy" value="社会生活をより良くしたい" class="text-blue-600 focus:ring-blue-500"> <span>社会生活をより良くしたい</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 学校 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">学校 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="school">クリア</button>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="school" value="支援級" class="text-blue-600 focus:ring-blue-500"> <span>支援級</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="school" value="通級" class="text-blue-600 focus:ring-blue-500"> <span>通級</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="radio" name="school" value="通常級" class="text-blue-600 focus:ring-blue-500"> <span>通常級</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 登校状況 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">登校状況 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="schoolStatus">クリア</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="checkbox" name="schoolStatus" value="毎日登校している" class="text-blue-600 focus:ring-blue-500 rounded"> <span>毎日登校</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="checkbox" name="schoolStatus" value="だいたい登校している" class="text-blue-600 focus:ring-blue-500 rounded"> <span>だいたい登校</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="checkbox" name="schoolStatus" value="半分ほど登校している" class="text-blue-600 focus:ring-blue-500 rounded"> <span>半分ほど登校</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="checkbox" name="schoolStatus" value="不登校である" class="text-blue-600 focus:ring-blue-500 rounded"> <span>不登校</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="checkbox" name="schoolStatus" value="短時間登校である" class="text-blue-600 focus:ring-blue-500 rounded"> <span>短時間登校</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors">
+            <input type="checkbox" name="schoolStatus" value="校内居場所登校である" class="text-blue-600 focus:ring-blue-500 rounded"> <span>校内居場所登校</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 特性 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-blue-400">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">特性 <span class="text-xs font-normal text-slate-500 ml-2">任意・複数選択可</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="characteristic">クリア</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="ASD" class="text-blue-600 focus:ring-blue-500 rounded"> <span>ASD</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="ADHD" class="text-blue-600 focus:ring-blue-500 rounded"> <span>ADHD</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="LD" class="text-blue-600 focus:ring-blue-500 rounded"> <span>LD</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="協調運動障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>協調運動障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="知的障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>知的障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="ダウン症候群" class="text-blue-600 focus:ring-blue-500 rounded"> <span>ダウン症候群</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="肢体不自由" class="text-blue-600 focus:ring-blue-500 rounded"> <span>肢体不自由</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="脳性麻痺" class="text-blue-600 focus:ring-blue-500 rounded"> <span>脳性麻痺</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="視覚障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>視覚障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="聴覚障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>聴覚障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="情緒障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>情緒障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="てんかん" class="text-blue-600 focus:ring-blue-500 rounded"> <span>てんかん</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="トゥレット症候群" class="text-blue-600 focus:ring-blue-500 rounded"> <span>トゥレット症候群</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="重症心身障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>重症心身障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="発達性言語障害" class="text-blue-600 focus:ring-blue-500 rounded"> <span>発達性言語障害</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="characteristic" value="境界知能" class="text-blue-600 focus:ring-blue-500 rounded"> <span>境界知能</span></label>
+        </div>
+      </div>
+
+      <!-- IQ -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">IQ <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="iq">クリア</button>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="radio" name="iq" value="低い" class="text-blue-600 focus:ring-blue-500"> <span>低い</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="radio" name="iq" value="やや低い" class="text-blue-600 focus:ring-blue-500"> <span>やや低い</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="radio" name="iq" value="中" class="text-blue-600 focus:ring-blue-500"> <span>中</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="radio" name="iq" value="やや高い" class="text-blue-600 focus:ring-blue-500"> <span>やや高い</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="radio" name="iq" value="高い" class="text-blue-600 focus:ring-blue-500"> <span>高い</span></label>
+        </div>
+      </div>
+
+      <!-- 苦手なこと -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-red-400">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">苦手なこと <span class="text-xs font-normal text-slate-500 ml-2">任意・複数選択可</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="weakness">クリア</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="落ち着いて座って、話を聞くこと" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">落ち着いて座って、話を聞くこと</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="新しい知識や概念を覚えること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">新しい知識や概念を覚えること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="文字を読んだり書いたりすること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">文字を読んだり書いたりすること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="計算をすること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">計算をすること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="時間や順序を理解すること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">時間や順序を理解すること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="他の子と協力して遊ぶこと" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">他の子と協力して遊ぶこと</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="気持ちを言葉で伝えること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">気持ちを言葉で伝えること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="相手の気持ちを察すること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">相手の気持ちを察すること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="順番を待つこと" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">順番を待つこと</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="ルールを守ること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">ルールを守ること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="じっとしていること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">じっとしていること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="体をコントロールすること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">体をコントロールすること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="大きな音を許容すること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">大きな音を許容すること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="特定の感触を許容すること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">特定の感触を許容すること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="特定の食事を受け入れること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">特定の食事を受け入れること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="細かい作業をすること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">細かい作業をすること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="体の動きを調整し、転ばずに動くこと" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">体の動きを調整し、転ばずに動くこと</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="持ち物の管理をすること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">持ち物の管理をすること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="着替えや食事をスムーズにこなすこと" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">着替えや食事をスムーズにこなすこと</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="トイレのタイミングを伝えること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">トイレのタイミングを伝えること</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="weakness" value="新しい環境や急な予定変更に対応すること" class="text-blue-600 focus:ring-blue-500 rounded"> <span class="text-sm">環境や予定変更に対応すること</span></label>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-slate-100">
+          <div class="flex justify-between items-center mb-2">
+            <label for="otherWeakness" class="text-sm font-semibold text-slate-700">その他苦手なこと</label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="otherWeakness">クリア</button>
+          </div>
+          <textarea id="otherWeakness" name="otherWeakness" rows="2" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="例：人前で話すこと、新しい場所に行くこと"></textarea>
+        </div>
+      </div>
+
+      <!-- 得意なこと -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-green-400">
+        <div class="flex justify-between items-center mb-3">
+          <label class="font-bold text-slate-800">得意なことや強み <span class="text-xs font-normal text-slate-500 ml-2">任意・複数選択可</span></label>
+          <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="strength">クリア</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="特定の分野での知識" class="text-blue-600 focus:ring-blue-500 rounded"> <span>特定の分野での知識</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="パターン認識能力" class="text-blue-600 focus:ring-blue-500 rounded"> <span>パターン認識能力</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="記憶力" class="text-blue-600 focus:ring-blue-500 rounded"> <span>記憶力</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="集中力" class="text-blue-600 focus:ring-blue-500 rounded"> <span>集中力</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="色彩感覚" class="text-blue-600 focus:ring-blue-500 rounded"> <span>色彩感覚</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="聴覚" class="text-blue-600 focus:ring-blue-500 rounded"> <span>聴覚</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="音楽" class="text-blue-600 focus:ring-blue-500 rounded"> <span>音楽</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="手先の器用さ" class="text-blue-600 focus:ring-blue-500 rounded"> <span>手先の器用さ</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="バランス感覚" class="text-blue-600 focus:ring-blue-500 rounded"> <span>バランス感覚</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="誠実さ" class="text-blue-600 focus:ring-blue-500 rounded"> <span>誠実さ</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="真面目さ" class="text-blue-600 focus:ring-blue-500 rounded"> <span>真面目さ</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="コミュニケーション" class="text-blue-600 focus:ring-blue-500 rounded"> <span>コミュニケーション</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-blue-600 transition-colors"><input type="checkbox" name="strength" value="感受性" class="text-blue-600 focus:ring-blue-500 rounded"> <span>感受性</span></label>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-100">
+          <div class="flex justify-between items-center mb-2">
+            <label for="otherStrength" class="text-sm font-semibold text-slate-700">その他得意なことや強み</label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="otherStrength">クリア</button>
+          </div>
+          <textarea id="otherStrength" name="otherStrength" rows="2" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="例：絵を描くこと、リーダーシップ"></textarea>
+        </div>
+      </div>
+
+      <!-- 自由入力エリア群 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex justify-between items-center mb-2">
+            <label for="favoriteThing" class="font-bold text-slate-800">好きなこと <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="favoriteThing">クリア</button>
+          </div>
+          <textarea id="favoriteThing" name="favoriteThing" rows="3" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="例：電車、ジグソーパズル、YouTube"></textarea>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex justify-between items-center mb-2">
+            <label for="parentHope" class="font-bold text-slate-800">保護者の希望 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="parentHope">クリア</button>
+          </div>
+          <textarea id="parentHope" name="parentHope" rows="3" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="例：学習習慣を身につけてほしい"></textarea>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex justify-between items-center mb-2">
+            <label for="shienProposal" class="font-bold text-slate-800">他の機関からの提案 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="shienProposal">クリア</button>
+          </div>
+          <textarea id="shienProposal" name="shienProposal" rows="3" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="例：学校や相談支援事業所などからの提案を記入してください"></textarea>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex justify-between items-center mb-2">
+            <label for="record" class="font-bold text-slate-800">現在の支援状況 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="record">クリア</button>
+          </div>
+          <textarea id="record" name="record" rows="3" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="現在行っている活動や具体的な支援内容、及びその様子など（箇条書きでも可）"></textarea>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 lg:col-span-2">
+          <div class="flex justify-between items-center mb-2">
+            <label for="futureSupport" class="font-bold text-slate-800">これから取り組みたい支援 <span class="text-xs font-normal text-slate-500 ml-2">任意</span></label>
+            <button type="button" class="text-xs text-slate-400 hover:text-red-500 transition-colors field-clear-btn" data-target="futureSupport">クリア</button>
+          </div>
+          <textarea id="futureSupport" name="futureSupport" rows="4" class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="今後取り組みたい活動や支援内容（箇条書きでも可）"></textarea>
+        </div>
+      </div>
+
+      <!-- 確認とアクションボタン -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mt-8">
+        <label class="flex items-center gap-3 cursor-pointer text-slate-800 font-bold mb-6 select-none bg-white p-4 rounded-lg shadow-sm">
+          <input type="checkbox" id="confirmationCheckbox" class="w-6 h-6 text-blue-600 focus:ring-blue-500 rounded border-gray-300">
+          <span class="text-lg">個人を特定できる情報は記入していません。（必須）</span>
+        </label>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+          <button type="button" id="generateButton" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-colors shadow-md flex items-center justify-center gap-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span id="generateButtonText">プロンプトを作成する</span>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- 結果エリア -->
+    <div id="result-section" class="mt-12 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+      <div class="bg-slate-800 px-6 py-4 flex justify-between items-center">
+        <div>
+          <h3 class="text-white font-bold text-lg">作成されたプロンプト</h3>
+          <p class="text-slate-400 text-xs mt-1">この文章をコピーして、ChatGPTやGeminiなどのAIに入力してください。</p>
+        </div>
+        <button type="button" id="copyButton" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors shadow flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+          コピー
+        </button>
+      </div>
+      <div id="result-container" class="p-6 bg-slate-50 text-slate-700 font-mono text-sm leading-relaxed min-h-[150px] whitespace-pre-wrap word-break-break-word">
+        必要な項目を入力し、上のボタンを押してプロンプトを作成してください。
+      </div>
+    </div>
+
+  </main>
+
+  <!-- スクリプト部（ロジックは元のまま維持） -->
+  <script>
+    const form = document.getElementById('recordForm');
+    const resultContainer = document.getElementById('result-container');
+    const confirmationCheckbox = document.getElementById('confirmationCheckbox');
+
+    const TEXTAREA_IDS = [
+      'record',
+      'otherWeakness',
+      'otherStrength',
+      'favoriteThing',
+      'parentHope',
+      'shienProposal',
+      'futureSupport',
+    ];
+
+    function getCheckedRadioValue(name) {
+      const el = form.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : '';
+    }
+
+    function getCheckedValues(name) {
+      return Array.from(form.querySelectorAll(`input[name="${name}"]:checked`)).map(x => x.value);
+    }
+
+    function getTextValue(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
+
+    const introductoryText =
+`以下に児童の様子を記載します。児童発達支援及び放課後等デイサービスの個別支援計画の素案を作成してください。以下の点に留意してください。
+・作成してほしいのは、「総合的な支援の方針」「長期目標」「短期目標」「支援目標及び具体的な支援内容」です。
+・「総合的な支援の方針」「長期目標」「短期目標」の各案は、箇条書きを避け、散文にまとめる。
+・「総合的な支援の方針」「長期目標」「短期目標」について、それぞれ3案ずつ提案する。
+・児童発達支援及び放課後等デイサービスのガイドラインにしたがった内容にする。
+・「支援目標及び具体的な支援内容」については、5案作成する。
+・提案した「支援目標及び具体的な支援内容」については、5領域（「健康・生活」「運動・感覚」「認知・行動」「言語・コミュニケーション」「人間関係・社会性」）のどれに該当するか記載する。なお、一つの案が複数の領域に該当してもよい。
+・児童の情報は参考であり、無理に記載する必要はない。
+・可能であれば肯定的な表現を用いる。
+・専門用語は避け、保護者が読んでも理解できる文章にする。
+・文末表現は「です・ます調」を使用する。
+・記録児童の名称は「本児」を用いる。
+
+児童の様子は以下のとおりです。`;
+
+    document.getElementById('generateButton').addEventListener('click', () => {
+      if (!confirmationCheckbox.checked) {
+        alert('「個人を特定できる情報は記入していません。」のチェックボックスにチェックを入れてください。');
+        confirmationCheckbox.focus();
+        // 視覚的なエラーフィードバック
+        confirmationCheckbox.parentElement.classList.add('ring-2', 'ring-red-500');
+        setTimeout(() => confirmationCheckbox.parentElement.classList.remove('ring-2', 'ring-red-500'), 2000);
+        return;
+      }
+
+      const parts = [];
+
+      // 年齢区分
+      const grade = getCheckedRadioValue('grade');
+      if (grade) parts.push(`年齢区分は${grade}です。`);
+
+      // 性別
+      const gender = getCheckedRadioValue('gender');
+      if (gender) parts.push(`性別は${gender}です。`);
+
+      // 大まかな支援方針
+      const shienPolicy = getCheckedRadioValue('shienPolicy');
+      if (shienPolicy) parts.push(`大まかな支援方針は「${shienPolicy}」です。`);
+
+      // 学校
+      const school = getCheckedRadioValue('school');
+      if (school) parts.push(`${school}に在籍しています。`);
+
+      // 登校状況
+      const schoolStatus = getCheckedValues('schoolStatus');
+      if (schoolStatus.length) parts.push(`登校状況は${schoolStatus.join('、')}です。`);
+
+      // 特性
+      const characteristics = getCheckedValues('characteristic');
+      if (characteristics.length) parts.push(`特性は${characteristics.join('、')}です。`);
+
+      // IQ
+      const iq = getCheckedRadioValue('iq');
+      if (iq) parts.push(`IQは${iq}です。`);
+
+      // 苦手なこと
+      const weaknesses = getCheckedValues('weakness');
+      if (weaknesses.length) parts.push(`苦手なことは、${weaknesses.join('、')}です。`);
+
+      // その他苦手
+      const otherWeakness = getTextValue('otherWeakness');
+      if (otherWeakness) parts.push(`その他苦手なことは、「${otherWeakness}」です。`);
+
+      // 得意・強み
+      const strengths = getCheckedValues('strength');
+      if (strengths.length) parts.push(`得意なことや強みは、${strengths.join('、')}です。`);
+
+      // その他得意
+      const otherStrength = getTextValue('otherStrength');
+      if (otherStrength) parts.push(`その他得意なことや強みは、「${otherStrength}」です。`);
+
+      // 好き
+      const favoriteThing = getTextValue('favoriteThing');
+      if (favoriteThing) parts.push(`好きなことは、「${favoriteThing}」です。`);
+
+      // 保護者の希望
+      const parentHope = getTextValue('parentHope');
+      if (parentHope) parts.push(`保護者の希望は、「${parentHope}」です。`);
+
+      // 他の機関からの提案
+      const shienProposal = getTextValue('shienProposal');
+      if (shienProposal) parts.push(`他の機関からの支援に関する提案は、「${shienProposal}」です。`);
+
+      // 現在の支援
+      const record = getTextValue('record');
+      if (record) parts.push(`現在の支援状況は「${record}」です。`);
+
+      // これから
+      const futureSupport = getTextValue('futureSupport');
+      if (futureSupport) parts.push(`これから取り組みたい支援は「${futureSupport}」です。`);
+
+      const body = parts.length
+        ? `\n\n${parts.join('\n')}`
+        : `\n\n（入力がまだありません。必要な項目を選ぶ/記入してから再度「プロンプトを作成する」を押してください。）`;
+
+      const fullPrompt = `${introductoryText}${body}`;
+      
+      resultContainer.textContent = fullPrompt;
+      
+      // 結果エリアへスクロール
+      document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // コピー機能
+    document.getElementById('copyButton').addEventListener('click', async function() {
+      const textToCopy = resultContainer.textContent;
+      const originalText = this.innerHTML;
+
+      // 視覚的フィードバックの関数
+      const showSuccess = () => {
+        this.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>コピー完了!`;
+        this.classList.replace('bg-emerald-500', 'bg-blue-500');
+        this.classList.replace('hover:bg-emerald-600', 'hover:bg-blue-600');
+        setTimeout(() => {
+          this.innerHTML = originalText;
+          this.classList.replace('bg-blue-500', 'bg-emerald-500');
+          this.classList.replace('hover:bg-blue-600', 'hover:bg-emerald-600');
+        }, 2000);
+      };
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(textToCopy);
+          showSuccess();
+          return;
+        }
+        // fallback for older browsers or non-secure contexts (like some iframes)
+        const temp = document.createElement('textarea');
+        temp.value = textToCopy;
+        temp.style.position = 'fixed';
+        temp.style.left = '-9999px';
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(temp);
+        if(ok) showSuccess();
+      } catch (e) {
+        console.error('コピーに失敗しました:', e);
+        alert('コピーに失敗しました。手動で選択してコピーしてください。');
+      }
+    });
+
+    // フィールドごとのクリア
+    document.querySelectorAll('.field-clear-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const target = button.getAttribute('data-target');
+
+        if (TEXTAREA_IDS.includes(target)) {
+          document.getElementById(target).value = '';
+          return;
+        }
+
+        // radio/checkbox
+        document.querySelectorAll(`input[name="${target}"]`).forEach(input => {
+          input.checked = false;
+        });
+      });
+    });
+
+    // 全項目クリア
+    document.getElementById('fullClearButton').addEventListener('click', () => {
+      if(!confirm('入力内容を全てクリアしますか？')) return;
+
+      document.querySelectorAll('input[type="radio"]').forEach(r => (r.checked = false));
+      document.querySelectorAll('input[type="checkbox"]').forEach(c => (c.checked = false));
+
+      TEXTAREA_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+
+      resultContainer.textContent = '必要な項目を入力し、上のボタンを押してプロンプトを作成してください。';
+    });
+  </script>
+</body>
+</html>

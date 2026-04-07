@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>「小学校道徳所見　自動生成」</title>
+  <meta name="description" content="小学校の道徳所見（あゆみ・指導要録）を自動生成するツールです。学年や内容項目に合わせて、適切な文言で3つの案を作成します。（せんせい箱）" />
+  <style>
+    :root { 
+      --bg: #fffaf0; 
+      --card: #ffffff; 
+      --text: #333333; 
+      --muted: #666666; 
+      --line: #e0e0e0; 
+      --btn: #ff9f43; 
+      --btn-hover: #e58e3c;
+      --btn2: #f5f5f5; 
+      --accent: #ff6b6b; 
+      --radius: 12px;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0; 
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap { 
+      max-width: 980px; 
+      margin: 0 auto; 
+      padding: 32px 20px 60px; 
+    }
+
+    h1 { 
+      font-size: 24px; 
+      margin: 0 0 8px; 
+      font-weight: 700; 
+      color: #444; 
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    h1::after {
+      content: "";
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: var(--btn);
+      border-radius: 2px;
+      margin-top: 4px;
+    }
+
+    .sub { 
+      color: var(--muted); 
+      font-size: 14px; 
+      margin-bottom: 28px; 
+      line-height: 1.6; 
+      margin-top: 8px; 
+    }
+
+    .grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 24px; 
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+    }
+
+    label { 
+      display: block; 
+      font-size: 13px; 
+      font-weight: 700; 
+      color: #555; 
+      margin: 0 0 6px; 
+    }
+
+    select, textarea, input[type="number"], input[type="text"] {
+      width: 100%;
+      background: #fdfdfd;
+      color: var(--text);
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    select:focus, textarea:focus, input:focus {
+      border-color: var(--btn);
+      box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.2);
+    }
+
+    textarea { 
+      min-height: 120px; 
+      resize: vertical; 
+      line-height: 1.6; 
+    }
+
+    .row { 
+      display: flex; 
+      gap: 16px; 
+      align-items: flex-start; 
+      flex-wrap: wrap; 
+    }
+    
+    .row > * { 
+      flex: 1; 
+      min-width: 140px; 
+    }
+
+    .small { 
+      font-size: 12px; 
+      color: var(--muted); 
+      line-height: 1.5; 
+      margin-top: 6px; 
+    }
+
+    .actions { 
+      display: flex; 
+      gap: 12px; 
+      flex-wrap: wrap; 
+      margin-top: 24px; 
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:active { 
+      transform: translateY(1px); 
+      opacity: 0.9; 
+    }
+
+    .primary { 
+      background: var(--btn); 
+      color: #fff; 
+      box-shadow: 0 4px 10px rgba(255, 159, 67, 0.25); 
+      flex: 2;
+    }
+    
+    .primary:hover {
+      background: var(--btn-hover);
+    }
+
+    .secondary { 
+      background: var(--btn2); 
+      border: 1px solid #ddd; 
+      color: #555; 
+      flex: 1;
+    }
+
+    .secondary:hover { 
+      background: #eee; 
+    }
+    
+    .out {
+      background: #f8f9fa;
+      border: 2px dashed #dce0e5;
+      border-radius: 8px;
+      padding: 16px;
+      line-height: 1.8;
+      word-break: break-all;
+      white-space: pre-wrap;
+      min-height: 80px;
+      font-feature-settings: "palt";
+      color: #333;
+      flex-grow: 1;
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-flex; 
+      gap: 6px; 
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 12px;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .pill:hover { 
+      background: #f0f0f0; 
+    }
+    
+    .pill input { 
+      margin: 0;
+      cursor: pointer; 
+    }
+    
+    .warn { 
+      color: #856404; 
+      background-color: #fff3cd; 
+      border: 1px solid #ffeeba;
+      font-size: 12px; 
+      margin-top: 12px; 
+      line-height: 1.5; 
+      padding: 10px 12px; 
+      border-radius: 8px; 
+    }
+
+    .ok { 
+      color: #27ae60; 
+      font-size: 14px; 
+      margin-top: 12px; 
+      min-height: 1.5em; 
+      font-weight: bold; 
+      text-align: center;
+    }
+    
+    .k { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Noto Sans Mono", monospace; }
+    
+    /* Copy Button */
+    .copy-btn {
+      background: var(--btn2);
+      border: 1px solid #ccc;
+      color: #555;
+      padding: 4px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      height: auto;
+    }
+    .copy-btn:hover { background: #eee; }
+
+    @media (max-width: 860px) { 
+      .grid { grid-template-columns: 1fr; } 
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>「小学校道徳所見　自動生成」</h1>
+    <div class="sub">
+      学年・用途・内容項目を選び、授業中の様子を1〜2文入力してください。<br>
+      「できた・できない」の評価を避け、児童の内面の変容や気付きとして表現した3つの案を作成します。<br>
+      <b>「所見を生成」ボタンを押すたびに、異なる言い回しで再提案します。（せんせい箱）</b>
+    </div>
+
+    <div class="grid">
+      <!-- Input Panel -->
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>学年（語彙レベル）</label>
+            <select id="grade">
+              <option value="Low">小学1・2年（低学年）</option>
+              <option value="Mid">小学3・4年（中学年）</option>
+              <option value="High" selected>小学5・6年（高学年）</option>
+            </select>
+          </div>
+          <div>
+            <label>用途</label>
+            <select id="usage">
+              <option value="report">通知表（あゆみ）</option>
+              <option value="record">指導要録</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:16px;">
+          <div style="flex:2;">
+            <label>内容項目（A〜D）</label>
+            <select id="item"></select>
+          </div>
+          <div style="flex:1;">
+            <label>目標文字数</label>
+            <input id="target" type="number" min="40" max="200" value="80" />
+            <div class="small">※ ±5字程度で調整</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>授業中の様子／振り返りの記述（1〜2文）</label>
+          <textarea id="obs" placeholder="例）友達の意見を聞いて「自分ならどうするか」と考えていた。今までの自分を振り返ってワークシートに書いていた。"></textarea>
+          
+          <div class="pill-group">
+            <label class="pill"><input id="mask" type="checkbox" checked />「〜さん」を自動で一般化</label>
+            <label class="pill"><input id="strict" type="checkbox" checked />評価的表現（できた等）の抑制</label>
+          </div>
+          
+          <div class="warn">※個人名や具体的な出来事が特定できる情報は含めないでください。</div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="gen">所見を生成（3案）</button>
+          <button class="secondary" id="clear">クリア</button>
+        </div>
+
+        <div class="ok" id="status"></div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <label style="margin:0;">生成結果</label>
+          <button class="copy-btn" id="copy">クリップボードにコピー</button>
+        </div>
+        
+        <div class="out" id="out">ここに生成された所見が表示されます。</div>
+        
+        <div class="small" id="counts" style="margin-top:12px; font-family:monospace; text-align:right;"></div>
+        
+        <div class="small" style="margin-top:20px; padding-top:16px; border-top:1px solid #eee;">
+          <strong>💡 ヒント</strong><br>
+          文章が抽象的すぎる場合は、様子の欄に具体的なエピソード（「登場人物の〇〇という言葉について」等）を少し加えると、より自然で説得力のある所見になります。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // 1) 小学校用 内容項目データ
+    // =========================
+    // 分類：A=主として自分自身に関すること, B=主として人との関わりに関すること, 
+    // C=主として集団や社会との関わりに関すること, D=主として生命や自然、崇高なものとの関わりに関すること
+    // ※小学校は学年によって項目数が異なりますが、ここでは高学年の項目をベースに網羅しています。
+    const ITEMS = [
+      { id: "A-1", label: "A [善悪の判断] よいこと・悪いこと",  keys: ["善悪の判断","正しい行い","勇気"] },
+      { id: "A-2", label: "A [正直・誠実] 正直に明るい心で",   keys: ["正直","素直","明るい心"] },
+      { id: "A-3", label: "A [節度・節制] わがままをしないで",  keys: ["節度","生活習慣","自分を律する"] },
+      { id: "A-4", label: "A [個性の伸長] 自分のよさを知る",    keys: ["自分のよさ","長所","向上心"] },
+      { id: "A-5", label: "A [希望・勇気] 目標に向かって",      keys: ["希望","勇気","努力"] },
+      
+      { id: "B-6", label: "B [親切・思いやり] 相手を思いやる",  keys: ["相手の立場","思いやり","温かい心"] },
+      { id: "B-7", label: "B [感謝] ありがとうの心",            keys: ["感謝","支え合い","恩"] },
+      { id: "B-8", label: "B [礼儀] 礼儀正しく",                keys: ["礼儀","真心","挨拶"] },
+      { id: "B-9", label: "B [友情・信頼] 友達と助け合う",      keys: ["友情","信頼","助け合い"] },
+      { id: "B-10", label: "B [相互理解] 考えの違いを認める",    keys: ["相互理解","寛容","違いを認める"] },
+      
+      { id: "C-11", label: "C [規則の尊重] 決まりを守る",        keys: ["約束","決まり","規律"] },
+      { id: "C-12", label: "C [公正・公平] 誰にでも公平に",      keys: ["公平","公正","差別をしない"] },
+      { id: "C-13", label: "C [勤労・公共] みんなのために働く", keys: ["勤労","奉仕","役割"] },
+      { id: "C-14", label: "C [家族愛] 家族を大切に",           keys: ["家族","敬愛","家庭"] },
+      { id: "C-15", label: "C [郷土愛] 郷土や学校を大切に",      keys: ["郷土愛","伝統","文化"] },
+      { id: "C-16", label: "C [国際理解] 他国の人々と",          keys: ["国際理解","親善","関心"] },
+      
+      { id: "D-17", label: "D [生命の尊さ] 命を大切に",          keys: ["生命","かけがえのなさ","生きる"] },
+      { id: "D-18", label: "D [自然愛護] 自然を大切に",          keys: ["自然","愛護","美しい心"] },
+      { id: "D-19", label: "D [感動・畏敬] 美しいものに感動",    keys: ["感動","畏敬","気高さ"] },
+      { id: "D-20", label: "D [よりよい生き方] 人間として",      keys: ["よりよい生き方","真理","探求"] },
+    ];
+
+    // =========================
+    // 2) ユーティリティ
+    // =========================
+    const byId = (id) => document.getElementById(id);
+
+    // 配列のシャッフル
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // 文字数カウント（空白無視）
+    function jpLen(s) {
+      return (s || "").replace(/\s+/g, "").length;
+    }
+
+    // 1行化
+    function oneLine(s) {
+      return (s || "").replace(/\r?\n/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    // 名前マスク処理
+    function maskNames(s) {
+      let t = s;
+      t = t.replace(/[一-龥ぁ-んァ-ヶ]{1,8}(さん|君|くん|ちゃん)/g, "友達");
+      t = t.replace(/（[^）]*）/g, ""); 
+      return t;
+    }
+
+    // 倫理的補正（小学校版）
+    function sanitizeForEthics(s, strict=true) {
+      let t = s;
+      const hardBan = ["完璧","いつも","必ず","絶対に","偉い"];
+      
+      if (strict) {
+        const behaviors = ["できた","できる","できるようになりました"];
+        for (const w of behaviors) {
+          t = t.replace(new RegExp(w, "g"), ""); 
+        }
+        t = t.replace(/優しい/g, "温かい");
+        t = t.replace(/良い子/g, "望ましい態度");
+      }
+      
+      for (const w of hardBan) {
+        t = t.replace(new RegExp(w, "g"), "");
+      }
+      t = t.replace(/すばらしい/g, "よい");
+      t = t.replace(/最高/g, "よりよい");
+      return oneLine(t);
+    }
+
+    // 学年ごとの語彙レベル設定
+    function gradeTone(grade) {
+      // Low: 低学年, Mid: 中学年, High: 高学年
+      if (grade === "Low") return { level: "low" };
+      if (grade === "Mid") return { level: "mid" };
+      return { level: "high" };
+    }
+
+    // ランダム選択
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // 文字数調整ロジック
+    function adjustLength(text, target=80, tol=5, usage="report") {
+      let t = oneLine(text);
+      const min = Math.max(30, target - tol);
+      const max = target + tol;
+      
+      const addPhrases = usage === "report"
+        ? ["これからの生活にも生かそうとしていました。", "自分のこととして深く考えていました。", "ワークシートに詳しく書いていました。"]
+        : ["これからの生活にも生かそうとしていた。", "自分のこととして深く考えていた。", "ワークシートに詳しく記述していた。"];
+
+      if (!/。$/.test(t)) t += "。";
+
+      // --- 削減処理 ---
+      let safetyCounter = 0;
+      while (jpLen(t) > max && safetyCounter < 10) {
+        safetyCounter++;
+        const currentLen = jpLen(t);
+        // 付加情報の削除
+        t = t.replace(/、(今後|これから|生活|自分のあり方)[^。]*。$/, "。");
+        // 修飾語の削除
+        if (jpLen(t) > max) {
+          t = t.replace(/(深く|広く|改めて|さらに|一生懸命|真剣に)/g, "")
+               .replace(/いろいろな/g, "");
+        }
+        t = t.replace(/、+/g, "、").replace(/、。/g, "。");
+        if (jpLen(t) === currentLen) break;
+      }
+
+      // --- 加筆処理 ---
+      let guard = 0;
+      while (jpLen(t) < min && guard++ < 6) {
+        t = t.replace(/。$/, "");
+        t += "、" + pickRandom(addPhrases);
+        t = oneLine(t);
+        if (!/。$/.test(t)) t += "。";
+        if (jpLen(t) > max + 15) { 
+           t = t.split("、").slice(0, -1).join("、") + "。";
+           break; 
+        }
+      }
+      return t.replace(/。。+/g, "。");
+    }
+
+    // =========================
+    // 3) 生成ロジック
+    // =========================
+    function generateThree(gradeType, usage, itemObj, obsRaw, target) {
+      const tone = gradeTone(gradeType);
+      
+      // 入力処理
+      let obs = oneLine(obsRaw);
+      if (byId("mask").checked) obs = maskNames(obs);
+      obs = sanitizeForEthics(obs, byId("strict").checked);
+
+      // デフォルト入力補完
+      const obsFallback = usage === "report"
+        ? "話合いの中で友達の考えを聞き、自分の考えを深めていました。"
+        : "話合いの中で他者の考えを聞き、自分の考えを深めていた。";
+      if (jpLen(obs) < 5) obs = obsFallback;
+
+      // 語彙セット
+      const rawPhrases = {
+        low: { // 低学年
+          notice: ["大切さに気付き", "大切さが分かり", "よさに気付き"],
+          think: ["自分のこととして考え", "自分と比べて考え", "思いをめぐらせ"],
+          connect: ["これからの生活でも", "今までの自分を振り返り", "友達との関わりの中で"],
+          multi: ["友達の話を聞いて", "いろいろな考えを知って", "みんなの意見を聞いて"]
+        },
+        mid: { // 中学年
+          notice: ["大切さを理解し", "意味を考え", "よさを感じ取り"],
+          think: ["自分の経験と重ねて考え", "自分事として考え", "考えを広げ"],
+          connect: ["日頃の生活を振り返り", "普段の生活に生かそうとし", "これからの自分について考え"],
+          multi: ["友達の考えに触れ", "多様な考えを知り", "違う意見も大切にし"]
+        },
+        high: { // 高学年
+          notice: ["価値の重要性に気付き", "大切さを深く理解し", "意義を捉え"],
+          think: ["自分の考えを深め", "内面を見つめ", "多角的に考え"],
+          connect: ["自己の生き方につなげ", "これまでの自分を省みて", "将来の自分と重ねて"],
+          multi: ["互いの考えを認め合い", "多様な価値観に触れ", "他者の意見を踏まえ"]
+        }
+      }[tone.level];
+
+      const pNotice = shuffle(rawPhrases.notice);
+      const pThink = shuffle(rawPhrases.think);
+      const pConnect = shuffle(rawPhrases.connect);
+      const pMulti = shuffle(rawPhrases.multi);
+
+      // 文末語彙
+      const endings = usage === "report"
+        ? { 
+            seen: ["姿が見られました", "様子がうかがえました"], 
+            feel: ["気持ちを高めていました", "考えを深めていました"], 
+            will: ["意欲をもっていました", "心がけていました"] 
+          }
+        : { 
+            seen: ["姿が見られた", "様子がうかがえた"], 
+            feel: ["心情を深めていた", "考えを深めていた"], 
+            will: ["意欲をもっていた", "心がけていた"] 
+          };
+      
+      const endSeen = () => pickRandom(endings.seen);
+      const endFeel = () => pickRandom(endings.feel);
+
+      const k = itemObj.keys || ["大切な心", "考え", "生活"];
+      const k1 = k[0]; 
+      const k2 = k[1] || k[0]; 
+
+      // テンプレート定義
+      const templates = [
+        // 案1：気付き重視
+        () => `授業を通して${pMulti[0]}、${k1}の${pNotice[0]}、${pConnect[0]}${pThink[0]}る${endSeen()}。`,
+        
+        // 案2：入力内容（obs）活用型
+        () => `${obs}ことをきっかけに、${k1}について${pThink[1]}、${k2}の心を${endFeel()}。`,
+        
+        // 案3：変容・意欲重視
+        () => `${pMulti[1]}${k1}について${pThink[2]}、${pConnect[1]}よりよくしていこうとする${endSeen()}。`
+      ];
+
+      // 実行
+      const raw = templates.map(fn => fn());
+
+      // クリーニング
+      const cleaned = raw.map(s => {
+        let t = oneLine(s)
+          .replace(/考える姿/g, "考え、姿")
+          .replace(/ことこと/g, "こと")
+          .replace(/についてについて/g, "について")
+          .replace(/きっかけにきっかけに/g, "きっかけに");
+          
+        if (!/。$/.test(t)) t += "。";
+        return t;
+      });
+
+      // 長さ調整
+      const adjusted = cleaned.map((s) => adjustLength(s, Number(target) || 80, 5, usage));
+
+      return { variants: adjusted };
+    }
+
+    // =========================
+    // 4) UI連携
+    // =========================
+    function initItems() {
+      const sel = byId("item");
+      sel.innerHTML = "";
+      for (const it of ITEMS) {
+        const opt = document.createElement("option");
+        opt.value = it.id;
+        opt.textContent = it.label;
+        sel.appendChild(opt);
+      }
+      sel.selectedIndex = 0;
+    }
+
+    function formatOutput(variants) {
+      return [
+        `【案1】${variants[0]}`,
+        `【案2】${variants[1]}`,
+        `【案3】${variants[2]}`
+      ].join("\n\n");
+    }
+
+    function updateCounts(variants, target) {
+      const ls = variants.map((v,i) => `案${i+1}: ${jpLen(v)}字`);
+      byId("counts").textContent = `${ls.join(" / ")} (目標${target}字)`;
+    }
+
+    // 初期化
+    initItems();
+
+    // イベント
+    byId("gen").addEventListener("click", () => {
+      const grade = byId("grade").value;
+      const usage = byId("usage").value;
+      const itemId = byId("item").value; 
+      const itemObj = ITEMS.find(x => x.id === itemId) || ITEMS[0];
+      const obs = byId("obs").value;
+      const target = Number(byId("target").value || 80);
+
+      const { variants } = generateThree(grade, usage, itemObj, obs, target);
+
+      byId("out").textContent = formatOutput(variants);
+      updateCounts(variants, target);
+
+      const status = byId("status");
+      status.textContent = "✓ 所見を生成しました";
+      status.style.opacity = "1";
+      setTimeout(() => { status.style.opacity = "0"; status.style.transition = "opacity 0.5s"; }, 3000);
+      setTimeout(() => { status.textContent = ""; status.style.transition = "none"; status.style.opacity = "1"; }, 3500);
+    });
+
+    byId("copy").addEventListener("click", () => {
+      const text = byId("out").textContent;
+      if (!text || text.includes("ここに生成")) return;
+      
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed"; 
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        document.execCommand("copy");
+        const btn = byId("copy");
+        const originalText = btn.textContent;
+        btn.textContent = "コピー完了!";
+        btn.style.background = "#e6fffa";
+        btn.style.color = "#27ae60";
+        btn.style.borderColor = "#27ae60";
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = "";
+          btn.style.color = "";
+          btn.style.borderColor = "";
+        }, 2000);
+      } catch (err) {
+        console.error("Copy failed", err);
+      }
+      
+      document.body.removeChild(textarea);
+    });
+
+    byId("clear").addEventListener("click", () => {
+      byId("obs").value = "";
+      byId("out").textContent = "ここに生成された所見が表示されます。";
+      byId("counts").textContent = "";
+      byId("status").textContent = "";
+    });
+  </script>
+</body>
+</html>

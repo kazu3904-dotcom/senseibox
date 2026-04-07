@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>教室トリビア</title>
+    <style>
+        :root {
+            --bg: #0b1121;
+            --card: rgba(255, 255, 255, .06);
+            --border: rgba(255, 255, 255, .12);
+            --text: #f8fafc;
+            --muted: #a7b0c0;
+            --accent: #60a5fa;
+            --accent2: #34d399;
+            --danger: #fb7185;
+            --shadow: 0 14px 40px rgba(0, 0, 0, .45);
+            --r: 18px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+            background: radial-gradient(circle at 50% -20%, #1e3a8a 0%, transparent 55%), var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 18px
+        }
+
+        header {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            justify-content: space-between;
+            margin: 8px 0 16px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0;
+            letter-spacing: .02em
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 4px
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.2fr .8fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 860px) {
+            .grid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            box-shadow: var(--shadow);
+            padding: 14px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 560px) {
+            .controls {
+                grid-template-columns: 1fr
+            }
+        }
+
+        label {
+            font-size: 12px;
+            color: var(--muted);
+            display: block;
+            margin: 0 0 6px
+        }
+
+        select,
+        button,
+        input[type="checkbox"] {
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, .25);
+            color: var(--text);
+            outline: none;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        .btnrow {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px
+        }
+
+        button {
+            border: none;
+            border-radius: 14px;
+            padding: 10px 14px;
+            cursor: pointer;
+            color: #081023;
+            background: linear-gradient(135deg, var(--accent), #93c5fd);
+            font-weight: 700;
+        }
+
+        button.secondary {
+            background: rgba(255, 255, 255, .10);
+            color: var(--text);
+            border: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        button.danger {
+            background: rgba(251, 113, 133, .12);
+            color: var(--text);
+            border: 1px solid rgba(251, 113, 133, .35);
+            font-weight: 700;
+        }
+
+        button:active {
+            transform: translateY(1px)
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .06);
+            color: var(--text);
+            user-select: none;
+        }
+
+        .toggle input {
+            transform: scale(1.1)
+        }
+
+        .pill {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .05);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .trivia-title {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .trivia-title h2 {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.25;
+        }
+
+        .meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px
+        }
+
+        .section {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, .18);
+            margin-top: 10px;
+        }
+
+        .section b {
+            display: block;
+            color: #dbeafe;
+            margin-bottom: 6px
+        }
+
+        .section p {
+            margin: 0;
+            color: var(--text);
+            line-height: 1.65
+        }
+
+        .small {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 8px;
+            line-height: 1.5
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mini {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, .18);
+        }
+
+        .mini .t {
+            font-weight: 700
+        }
+
+        .mini .m {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 4px
+        }
+
+        .mini .actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .mini button {
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 12px
+        }
+
+        footer {
+            margin: 14px 0 0;
+            color: var(--muted);
+            font-size: 12px
+        }
+
+        a {
+            color: #bfdbfe
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div>
+                <h1>教室トリビア</h1>
+                <div class="sub">ボタン1つで「そのまま話せる」1分ネタ。お気に入り・履歴・今日の固定つき。</div>
+            </div>
+            <div class="pill" id="countPill">データ: 0件</div>
+        </header>
+
+        <div class="grid">
+            <!-- LEFT: MAIN -->
+            <section class="card">
+                <div class="controls">
+                    <div>
+                        <label for="grade">学年</label>
+                        <select id="grade">
+                            <option value="all">指定なし</option>
+                            <option value="low">低学年</option>
+                            <option value="mid">中学年</option>
+                            <option value="high">高学年</option>
+                            <option value="jhs">中学生</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="category">カテゴリ</label>
+                        <select id="category">
+                            <option value="all">ランダム（全カテゴリ）</option>
+                            <option value="食べ物">食べ物</option>
+                            <option value="体">体</option>
+                            <option value="生き物">生き物</option>
+                            <option value="科学">科学</option>
+                            <option value="日本">日本</option>
+                            <option value="季節">季節</option>
+                            <option value="学校">学校</option>
+                            <option value="歴史">歴史</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="btnrow">
+                    <button id="btnPick">トリビアを出す</button>
+                    <button class="secondary" id="btnShort">短縮モード</button>
+                    <div class="toggle">
+                        <input type="checkbox" id="todayFixed" />
+                        <label for="todayFixed" style="margin:0;color:var(--text);font-size:13px">今日の1つ（固定）</label>
+                    </div>
+                    <button class="secondary" id="btnCopy">台本をコピー</button>
+                </div>
+
+                <div class="small" id="hint">
+                    「今日の1つ（固定）」をONにすると、その日の同じ条件（学年・カテゴリ）では同じネタが出ます。
+                </div>
+
+                <div style="height:10px"></div>
+
+                <div class="trivia-title">
+                    <div>
+                        <h2 id="tTitle">まだ出していません</h2>
+                        <div class="meta" id="tMeta"></div>
+                    </div>
+                    <div class="row">
+                        <button class="secondary" id="btnFav">☆ お気に入り</button>
+                    </div>
+                </div>
+
+                <div id="tBody"></div>
+                <div class="btnrow" id="answerBtnRow" style="display:none; margin-top:12px;">
+                    <button class="secondary" id="btnShowAnswer"
+                        style="width:100%; border-color:var(--accent2); color:var(--accent2);">💡 こたえ・ヒントを見る</button>
+                </div>
+                <div id="tAnswer" class="section"
+                    style="display:none; margin-top:10px; border:1px solid var(--accent2); background:rgba(52,211,153,.1);">
+                    <b style="color:var(--accent2); font-size:16px;">💡 こたえ・ヒント</b>
+                    <p id="tAnswerText" style="font-weight:bold; margin-top:4px; line-height:1.6;"></p>
+                </div>
+
+                <footer>
+                    ※学校向けに、誤情報を減らすため「固定データ方式」です。必要なら後でネタを差し替えできます。
+                </footer>
+            </section>
+
+            <!-- RIGHT: FAVORITES & HISTORY -->
+            <aside class="card">
+                <div class="row" style="justify-content:space-between">
+                    <div class="pill">お気に入り</div>
+                    <button class="danger" id="btnClearFav">お気に入りを消す</button>
+                </div>
+                <div style="height:10px"></div>
+                <div class="list" id="favList"></div>
+
+                <div style="height:14px"></div>
+
+                <div class="row" style="justify-content:space-between">
+                    <div class="pill">履歴（直近10件）</div>
+                    <button class="secondary" id="btnClearHistory">履歴を消す</button>
+                </div>
+                <div style="height:10px"></div>
+                <div class="list" id="historyList"></div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        /** ===== データ（100件） =====
+         * grade: low/mid/high/jhs/all
+         * category: 食べ物/体/生き物/科学/日本/季節/学校/歴史
+         */
+        const TRIVIA = [
+            // --- 20（あなたがOKした雰囲気の元データ）+分類付け ---
+            { category: "食べ物", grade: "all", title: "バナナは木じゃない", intro: "バナナって木に見えるよね", surprise: "実は草の仲間です", reason: "茎は葉っぱが重なってできていて年輪がありません", comment: "世界一大きい草とも言われます", question: "じゃあ竹は木？草？", answer: "草（正確には多年草）の仲間です！" },
+            { category: "体", grade: "all", title: "人は寝ている間に成長する", intro: "夜ふかしすると背は伸びると思う？", surprise: "成長ホルモンは寝ている間に一番出ます", reason: "体を修復する時間だからです", comment: "ゲームより睡眠がレベルアップ", question: "何時に寝るのがよさそう？", answer: "なるべく同じ時間にたっぷり寝るのが大事（夜9〜10時頃が理想）！" },
+            { category: "生き物", grade: "all", title: "タコに骨はない", intro: "タコって固いと思う？柔らかい？", surprise: "骨がまったくありません", reason: "筋肉だけで体を動かしています", comment: "だから小さい穴にも入れます", question: "じゃあイカには骨ある？", answer: "イカには透明で柔らかい骨（軟甲）があります！" },
+            { category: "体", grade: "all", title: "くしゃみは止めると危険", intro: "くしゃみ出そうなとき止めたことある？", surprise: "我慢すると体に強い圧力がかかります", reason: "空気が逃げ場を失うからです", comment: "自然に出すのが安全", question: "どうやって止めずにする？", answer: "手やハンカチで覆って小さく、でも自然に出すのが安全！" },
+            { category: "科学", grade: "all", title: "鉛筆はダイヤモンドと同じ材料", intro: "鉛筆の芯は何でできている？", surprise: "ダイヤモンドと同じ炭素です", reason: "並び方が違うだけです", comment: "鉛筆＝宝石の仲間", question: "じゃあ石炭も仲間？", answer: "石炭も同じ炭素の仲間ですが、並び方が少し違います！" },
+            { category: "生き物", grade: "all", title: "イルカは魚じゃない", intro: "イルカって魚？", surprise: "哺乳類です", reason: "肺で呼吸し赤ちゃんに母乳をあげます", comment: "人と同じ仲間", question: "クジラはどっち？", answer: "クジラもイルカと同じ哺乳類の仲間です（大きさで呼び方が違うだけ）！" },
+            { category: "科学", grade: "all", title: "北極と南極は寒さが違う", intro: "より寒いのはどっちだと思う？", surprise: "南極の方がずっと寒いです", reason: "大陸の上に氷が乗っているから", comment: "−80℃になることも", question: "人は住める？", answer: "観測隊の人たちが住んで仕事をしているよ（すごく厳しい環境だけどね）！" },
+            { category: "体", grade: "all", title: "舌には場所ごとの味はない", intro: "甘いのは舌の先だけ？", surprise: "全部の場所で味を感じます", reason: "昔の説が間違って広まりました", comment: "科学も更新される", question: "じゃあ苦いのはどこ？", answer: "昔は舌の奥と言われていたけど、今は舌の全部の場所で感じると分かっています！" },
+            { category: "生き物", grade: "all", title: "ペンギンは飛べる鳥の仲間", intro: "ペンギンは鳥じゃない気がする？", surprise: "分類は鳥です", reason: "羽と卵と体の作りが同じ", comment: "空ではなく海を飛ぶ鳥", question: "ニワトリは飛べる？", answer: "少しなら（数十メートルくらい）飛ぶことができます！" },
+            { category: "科学", grade: "all", title: "氷は水に浮く珍しい物質", intro: "普通は固体と液体どっちが重い？", surprise: "水は固体の方が軽い", reason: "分子の並びが広がるから", comment: "だから池が凍っても魚が生きられる", question: "全部沈んだらどうなる？", answer: "海や池の底も凍ってしまって、魚が全部生きられなくなります！" },
+            { category: "学校", grade: "all", title: "くつの左右がある理由", intro: "昔の靴は左右同じ形でした", surprise: "足が痛くなるから変わりました", reason: "歩きやすさの研究", comment: "人間の工夫", question: "サンダルは？", answer: "昔のサンダルや下駄も、最初は左右がありませんでした！" },
+            { category: "体", grade: "all", title: "心臓は一生休まない", intro: "心臓は1日に何回動くと思う？", surprise: "約10万回です", reason: "血液を送り続けるため", comment: "止まらないポンプ", question: "一生で何回？", answer: "80年生きるとしたら、約30億回も動きます！" },
+            { category: "生き物", grade: "all", title: "カメレオンは背景の色に合わせていない", intro: "カメレオンは隠れるために色を変える？", surprise: "気分や体温で変わります", reason: "体の細胞が反応するから", comment: "感情が見える生き物", question: "怒ると何色？", answer: "怒った時は色が濃くなったり、黒っぽくなったりします！" },
+            { category: "科学", grade: "high", title: "雷は下から上にも光る", intro: "雷は空から落ちるだけ？", surprise: "地面から上に伸びる光もあります", reason: "電気が引き合うから", comment: "見えないけど同時", question: "どちらが先？", answer: "ほぼ同時ですが、下からのお迎えの光と、上からの光がくっついてドカーンとなります！" },
+            { category: "生き物", grade: "all", title: "蚊は血が主食じゃない", intro: "蚊は何のために血を吸う？", surprise: "卵を作るためだけ", reason: "普段は花の蜜を飲みます", comment: "吸うのはメスだけ", question: "オスは刺す？", answer: "オスは花の蜜などを吸うだけで、人は刺しません！" },
+            { category: "科学", grade: "mid", title: "影にも色がある", intro: "影は黒だと思う？", surprise: "青っぽく見えることがあります", reason: "空の光が混ざるから", comment: "写真の秘密", question: "夕方は何色？", answer: "夕焼けの光が当たって、影が紫色や少し赤っぽく見えることがあります！" },
+            { category: "日本", grade: "all", title: "日本の信号は青と呼ぶ", intro: "信号の色は何色？", surprise: "法律では青です", reason: "昔の言葉の名残", comment: "緑なのに青信号", question: "他の国は？", answer: "アメリカなど多くの国では『グリーン（緑）』と呼びます！" },
+            { category: "科学", grade: "all", title: "宇宙は無音", intro: "宇宙では爆発音は聞こえる？", surprise: "聞こえません", reason: "空気がないから", comment: "映画とは違う", question: "じゃあどうやって伝える？", answer: "電波を使った無線や、ランプの光などを使って伝えます！" },
+            { category: "体", grade: "all", title: "人は瞬きをしている間見えていない", intro: "瞬きの間何が起きてる？", surprise: "一瞬見えていません", reason: "脳がつなげている", comment: "映像編集みたい", question: "1分で何回？", answer: "1分間に約15〜20回くらい瞬きしています！" },
+            { category: "科学", grade: "all", title: "氷山のほとんどは海の中", intro: "氷山は見えてる部分が全部？", surprise: "約9割は水中です", reason: "浮力の関係", comment: "本当の大きさは見えない", question: "人の性格も同じ？", answer: "見えている態度は一部で、心の中には見えない思いがたくさんあるかもしれませんね！" },
+
+            // --- 23（前に追加で出した分）+分類付け ---
+            { category: "体", grade: "high", title: "骨はコンクリートより硬い", intro: "骨ってどれくらい硬いと思う？", surprise: "同じ太さならコンクリートより丈夫です", reason: "中がスポンジ状で衝撃を逃がすから", comment: "軽くて強い設計", question: "じゃあ鉄より強い？", answer: "鉄と比べると、同じ重さで比べた場合は骨の方が強い部分もあります！" },
+            { category: "体", grade: "all", title: "血の色は体の中でも赤", intro: "血は外に出ると赤くなる？", surprise: "体の中でも赤です", reason: "酸素の量で明るさが変わるだけ", comment: "青くはない", question: "血管が青く見えるのはなぜ？", answer: "皮膚の色や光の反射で、血管が青っぽく透けて見えるためです！" },
+            { category: "体", grade: "all", title: "髪の毛は死んだ細胞", intro: "髪を切っても痛くないよね", surprise: "外に出ている部分は死んだ細胞です", reason: "根元だけが生きています", comment: "爪も同じ", question: "じゃあ引っ張ると痛いのは？", answer: "皮膚の中にある『根元（毛根）』は生きていて神経がつながっているからです！" },
+            { category: "体", grade: "all", title: "あくびはうつる", intro: "人のあくびを見るとどうなる？", surprise: "脳がつられて出ます", reason: "共感の働きと言われます", comment: "仲が良いほど起きやすい", question: "動物も？", answer: "犬やチンパンジーなどでも、あくびがうつることが分かっています！" },
+            { category: "体", grade: "all", title: "汗は最初は無臭", intro: "汗ってくさい？", surprise: "出た直後は無臭です", reason: "細菌が分解してにおう", comment: "すぐ拭くのが大事", question: "なぜ夏は強くなる？", answer: "たくさん汗をかいて、菌が繁殖しやすくなるからです！" },
+            { category: "生き物", grade: "all", title: "猫は甘さを感じない", intro: "猫にケーキをあげたら喜ぶ？", surprise: "甘味を感じません", reason: "味覚の遺伝子がない", comment: "肉食動物の特徴", question: "犬は？", answer: "犬は甘みを感じることができます（でもお菓子はあげちゃダメです）！" },
+            { category: "生き物", grade: "all", title: "ゾウはジャンプできない", intro: "大きなゾウは跳べる？", surprise: "ジャンプできません", reason: "体の重さと足の構造", comment: "ずっと地面に接している", question: "キリンは？", answer: "キリンもジャンプできません！（体重が重く、足が長すぎるため）" },
+            { category: "生き物", grade: "all", title: "ナマケモノは週1回しか降りない", intro: "ナマケモノは木から降りる？", surprise: "トイレの時だけ降ります", reason: "天敵に見つかるから", comment: "命がけのトイレ", question: "何分かかる？", answer: "動きがすごく遅いので、数十分かかることもあります！" },
+            { category: "食べ物", grade: "all", title: "ハチミツは腐らない", intro: "ハチミツって賞味期限ある？", surprise: "ほぼ腐りません", reason: "糖度が高く菌が増えない", comment: "古代の壺からも発見", question: "なぜ固まる？", answer: "温度が下がると、中の糖分が結晶になって固まる性質があるためです！" },
+            { category: "科学", grade: "high", title: "月には匂いがある", intro: "宇宙は無臭だと思う？", surprise: "月の石は火薬の匂い", reason: "酸化した鉱物のにおいと言われます", comment: "宇宙飛行士の感想", question: "火星はどうだろう？", answer: "まだ行くことは難しいけど、探査機で調べられたらいつか匂いも分かるかも！？" },
+            { category: "生き物", grade: "all", title: "金魚は記憶が短くない", intro: "3秒で忘れるって本当？", surprise: "数か月覚えます", reason: "学習実験で確認されています", comment: "偏見でした", question: "じゃあ犬は？", answer: "犬は人の言葉やあったことを何年もずっと長く覚えています！" },
+            { category: "科学", grade: "all", title: "砂漠は夜寒い", intro: "砂漠はずっと暑い？", surprise: "夜は0℃近くまで下がることも", reason: "水蒸気が少なく熱が逃げやすい", comment: "温度差が激しい", question: "なぜ海は下がりにくい？", answer: "海（水）は、一度温まると冷めにくい性質があるからです！" },
+            { category: "食べ物", grade: "all", title: "トマトは果物", intro: "野菜売り場にあるけど？", surprise: "分類は果物です", reason: "種を持つ実だから", comment: "イチゴも実は…？", question: "スイカは野菜？", answer: "分類上は野菜（果実的野菜）になります！" },
+            { category: "科学", grade: "high", title: "宇宙でも書けるペンがある", intro: "宇宙でペンは使える？", surprise: "特別なボールペンなら書けます", reason: "圧力でインクを出す仕組み", comment: "環境に合わせた工夫", question: "鉛筆は向いてる？", answer: "芯の粉が飛んで機械に入ると危ないので、あまり使いません！" },
+            { category: "科学", grade: "mid", title: "虹は人によって違う", intro: "同じ虹を見ている？", surprise: "見る位置で角度が変わります", reason: "光の反射角が決まっているから", comment: "自分だけの虹", question: "二重虹はなぜ？", answer: "光が水滴の中で2回反射すると、外側にもう1つ薄い虹ができます！" },
+            { category: "科学", grade: "mid", title: "雨の匂いの正体", intro: "雨の前の匂い好き？", surprise: "土の中の成分が空中に舞う匂いです", reason: "水滴で広がるから", comment: "理科っぽい名前もある", question: "雪の日の匂いは？", answer: "空気が冷たくなって、普段と違う匂い（ホコリっぽい匂いなど）を感じることがあります！" },
+            { category: "科学", grade: "high", title: "電池は少しだけ復活することがある", intro: "電池が切れたら終わり？", surprise: "少しだけ戻ることがあります", reason: "内部の反応が一時的に整うため", comment: "応急処置", question: "冷やすとどうなる？", answer: "反応が鈍くなるので冷やすと復活しにくいです（温めると少し出ますが危険なことも）！" },
+            { category: "科学", grade: "high", title: "ガラスは結晶じゃない", intro: "ガラスは固体？", surprise: "結晶構造を持たない物質です", reason: "原子の並びがバラバラ", comment: "不思議な固さ", question: "氷は結晶？", answer: "氷は水分子がきれいに並んだ『結晶』です！" },
+            { category: "科学", grade: "high", title: "地球は少しずつ変わっている", intro: "地球の重さは同じ？", surprise: "宇宙に逃げるものも、入ってくるものもあります", reason: "ガスや隕石などが関係", comment: "ほんのわずか", question: "入ってくるのは何？", answer: "宇宙の少しのチリや、隕石などが落ちてきます！" },
+            { category: "科学", grade: "all", title: "影の長さで時間がわかる", intro: "時計がない時は？", surprise: "影でだいたい分かります", reason: "太陽の高さが変わるから", comment: "日時計の原理", question: "曇りの日は？", answer: "影ができないので、水時計や砂時計、線香が燃える時間などで測りました！" },
+
+            // --- ここから追加：残り57件（合計100にする） ---
+            // 食べ物（追加）
+            { category: "食べ物", grade: "low", title: "ポップコーンはトウモロコシの一種だけ", intro: "トウモロコシなら何でも弾ける？", surprise: "弾ける種類は限られます", reason: "皮の硬さと中の水分がポイント", comment: "中が蒸気で爆発！", question: "弾けない種類は何になる？", answer: "茹でて食べたり、スイートコーンとして食べます！" },
+            { category: "食べ物", grade: "mid", title: "りんごは切ると茶色くなる", intro: "切ったりんご、色が変わるよね", surprise: "空気に触れて反応しています", reason: "成分が酸素と反応するから", comment: "レモンで防げることも", question: "他に茶色くなる食べ物は？", answer: "バナナ、桃、アボカドなども切ると茶色くなります！" },
+            { category: "食べ物", grade: "all", title: "辛さは「味」じゃない", intro: "辛いって味？", surprise: "痛みの仲間です", reason: "刺激を感じる神経が反応します", comment: "だから水より牛乳が効くことも", question: "酸っぱいは味？痛み？", answer: "酸っぱいは「味（酸味）」です！" },
+            { category: "食べ物", grade: "mid", title: "炭酸のシュワシュワは二酸化炭素", intro: "炭酸は何が入ってる？", surprise: "二酸化炭素が溶けています", reason: "ふたを開けると出てくるから", comment: "泡はガスの出口", question: "温めるとどうなる？", answer: "炭酸が抜けやすくなって、泡がたくさん出ます！" },
+            { category: "食べ物", grade: "high", title: "チョコは昔、薬っぽい飲み物", intro: "チョコは最初から甘かった？", surprise: "昔は苦い飲み物でした", reason: "砂糖が貴重だったから", comment: "甘い発明が大ヒット", question: "苦いチョコ、食べられる？", answer: "カカオがたくさん入った苦いチョコは、大人の人に人気です！" },
+            { category: "食べ物", grade: "all", title: "パンの穴は酵母のしごと", intro: "パンに穴があるのはなぜ？", surprise: "酵母が出すガスです", reason: "発酵で二酸化炭素が出る", comment: "生き物がふくらませた", question: "じゃあ重曹は？", answer: "重曹も温めるとガスを出して、ホットケーキなどをふくらませます！" },
+            { category: "食べ物", grade: "high", title: "氷を入れると甘さの感じ方が変わる", intro: "同じジュースでも味が違う？", surprise: "冷えると甘さを感じにくい", reason: "味覚の反応が変わるから", comment: "だからアイスは甘め", question: "温めるとどうなる？", answer: "温めると甘さを強く感じやすくなります！" },
+            { category: "食べ物", grade: "mid", title: "味噌汁の香りは発酵の力", intro: "味噌って何からできる？", surprise: "発酵で香りが生まれます", reason: "微生物が成分を変えるから", comment: "目に見えない料理人", question: "発酵食品を3つ言える？", answer: "納豆、ヨーグルト、チーズなどがあります！" },
+
+            // 体（追加）
+            { category: "体", grade: "low", title: "涙は悲しい時だけじゃない", intro: "涙っていつ出る？", surprise: "目を守るためにも出ます", reason: "ゴミを流す役目", comment: "笑いすぎても出る", question: "目を守る方法、他には？", answer: "まばたきをしたり、まつ毛がゴミを防いでいます！" },
+            { category: "体", grade: "mid", title: "指先は体の地図が細かい", intro: "指先はなんで敏感？", surprise: "神経がたくさんあります", reason: "細かい情報を脳に送るため", comment: "スマホ操作に向いてる", question: "一番敏感な場所はどこ？", answer: "唇（くちびる）や舌などもとても敏感です！" },
+            { category: "体", grade: "all", title: "骨は生きている", intro: "骨って動かない石みたい？", surprise: "中で作り替えが起きています", reason: "古い骨を壊して新しく作る", comment: "体のリフォーム", question: "カルシウムは何に必要？", answer: "新しくて丈夫な骨を作るための材料（ブロック）になります！" },
+            { category: "体", grade: "mid", title: "皮ふは体で一番大きい臓器", intro: "臓器って内側だけ？", surprise: "皮ふも臓器です", reason: "体を守る働きがあるから", comment: "体のよろい", question: "皮ふの役割を3つ言える？", answer: "バイ菌を防ぐ、体温を調整する、水分を保つなどがあります！" },
+            { category: "体", grade: "high", title: "脳は痛みを感じない", intro: "頭が痛いのに脳は痛くない？", surprise: "脳自体には痛覚がほぼありません", reason: "周りの膜や血管が痛むことが多い", comment: "不思議だけど本当", question: "じゃあ脳の手術は？", answer: "頭の皮ふは麻酔で痛みを消しますが、脳自体は触られても痛くありません！" },
+            { category: "体", grade: "all", title: "おならの大半は飲み込んだ空気", intro: "おならは全部お腹で作る？", surprise: "多くは飲み込んだ空気です", reason: "食事中に空気を飲むから", comment: "早食い注意", question: "減らすコツは？", answer: "よく噛んで、ゆっくり食べると飲み込む空気が減ります！" },
+            { category: "体", grade: "mid", title: "匂いで味が変わる", intro: "鼻をつまむとどう？", surprise: "味が分かりにくくなります", reason: "香りも味の一部だから", comment: "風邪で食欲が落ちる理由", question: "好きな匂いは何？", answer: "（みんなで答えてみよう！カレー、パンの焼ける匂いなど）" },
+            { category: "体", grade: "high", title: "筋肉は電気で動いている", intro: "筋肉はどう動く？", surprise: "神経の電気信号で動きます", reason: "脳→神経→筋肉へ命令", comment: "体は電気のネットワーク", question: "反射はどこが判断？", answer: "脳ではなく『脊髄（せきずい）』という神経がすばやく判断して動かします（反射）！" },
+
+            // 生き物（追加）
+            { category: "生き物", grade: "low", title: "カタツムリの目は触角の先", intro: "カタツムリの目はどこ？", surprise: "触角の先にあります", reason: "伸び縮みする仕組み", comment: "引っ込むのもすごい", question: "もう1本の触角は何？", answer: "下にある短い触角は『におい』や『味』を感じる役目です！" },
+            { category: "生き物", grade: "mid", title: "クラゲは脳がない", intro: "クラゲはどうやって動く？", surprise: "脳がありません", reason: "神経が網のように広がっている", comment: "シンプル設計", question: "脳がなくてもできることは？", answer: "エサを捕まえたり、危険から逃げたり、海を漂うことができます！" },
+            { category: "生き物", grade: "all", title: "ミツバチは踊って場所を伝える", intro: "ハチは仲間にどう知らせる？", surprise: "ダンスで伝えます", reason: "角度と動きで方向・距離を表す", comment: "踊る地図", question: "人はどう伝える？", answer: "言葉、身振り手振り、地図を描くなど色々な方法がありますね！" },
+            { category: "生き物", grade: "mid", title: "カラスは道具を使う", intro: "動物は道具を使える？", surprise: "カラスは使います", reason: "学習して工夫できるから", comment: "頭がいい鳥", question: "他に道具を使う動物は？", answer: "ラッコ（石で貝を割る）やチンパンジー（木の枝でシロアリを釣る）などがいます！" },
+            { category: "生き物", grade: "high", title: "キノコは植物じゃない", intro: "キノコは何の仲間？", surprise: "菌類です", reason: "光合成をしないから", comment: "森のリサイクル係", question: "カビも同じ仲間？", answer: "カビもキノコと同じ『菌類』の仲間です！" },
+            { category: "生き物", grade: "all", title: "アリは仲間のにおいで分かる", intro: "アリは顔で見分ける？", surprise: "においで仲間を判定します", reason: "体の成分の匂いが違う", comment: "匂いの名札", question: "人は何で仲間が分かる？", answer: "顔、声、名前、服の形などで見分けます！" },
+            { category: "生き物", grade: "mid", title: "ヘビはまぶたがない", intro: "ヘビは目を閉じる？", surprise: "まぶたがありません", reason: "透明な膜で守っているから", comment: "だから瞬きしない", question: "乾かないの？", answer: "透明なウロコの膜で守られているので乾きません！" },
+            { category: "生き物", grade: "high", title: "サメは止まると息ができない種類がいる", intro: "サメはずっと泳ぐ？", surprise: "止まると呼吸しにくい種類もいます", reason: "泳いで水をエラに通すため", comment: "走りながら呼吸みたい", question: "止まっても平気な魚は？", answer: "クチビルをパクパク動かしてエラに水を送れる魚（多くの魚）は止まっても平気です！" },
+
+            // 科学（追加）
+            { category: "科学", grade: "low", title: "磁石は見えない力で引く", intro: "磁石の力は見える？", surprise: "見えないけど働いています", reason: "磁力があるから", comment: "目に見えないのに強い", question: "磁石がつかない金属は？", answer: "アルミニウム（1円玉）や銅（10円玉）、金などはつきません！" },
+            { category: "科学", grade: "mid", title: "風は空気の引っ越し", intro: "風はどうして吹く？", surprise: "温度差で空気が動くからです", reason: "暖かい空気は上へ、冷たい空気が移動", comment: "空気の大移動", question: "海風・陸風はどっち？", answer: "昼は海から陸へ（海風）、夜は陸から海へ（陸風）吹きます！" },
+            { category: "科学", grade: "all", title: "音は空気のふるえ", intro: "音はどうやって届く？", surprise: "空気がふるえて伝わります", reason: "波みたいに広がるから", comment: "だから宇宙は無音", question: "水の中だとどうなる？", answer: "空気中よりも音が速く、遠くまで伝わります！" },
+            { category: "科学", grade: "mid", title: "紙は木を細かくしたもの", intro: "紙って何からできる？", surprise: "木の繊維です", reason: "パルプを固めて作る", comment: "木が形を変えた", question: "リサイクルは何回できる？", answer: "繊維がだんだん短くなるので、数回（3〜5回くらい）が限界と言われます！" },
+            { category: "科学", grade: "high", title: "電気は「流れやすい道」を通る", intro: "電気はどこを通る？", surprise: "流れやすい所を選びます", reason: "抵抗が小さい道を通るから", comment: "近道じゃなく楽な道", question: "水の流れに例えると？", answer: "細いパイプよりも、太くて通りやすいパイプに水がたくさん流れるのと同じです！" },
+            { category: "科学", grade: "high", title: "光はとても速いけど無限じゃない", intro: "光は一瞬で届く？", surprise: "速いけど時間がかかります", reason: "宇宙は広すぎるから", comment: "星の光は過去の光", question: "太陽の光は何分で届く？", answer: "地球まで約8分20秒かかります！" },
+            { category: "科学", grade: "mid", title: "氷が滑るのは水ができるから", intro: "氷はなぜ滑る？", surprise: "表面に薄い水ができやすい", reason: "圧力や摩擦で溶ける", comment: "水の膜でツルツル", question: "寒すぎると滑りにくい？", answer: "極寒の場所など、寒すぎると氷が溶けにくいので滑りにくくなります！" },
+            { category: "科学", grade: "high", title: "同じ温度でも湿度で暑さが変わる", intro: "30℃でもきつい日があるよね", surprise: "湿度が高いと暑く感じます", reason: "汗が蒸発しにくいから", comment: "汗は冷却装置", question: "風があると楽なのはなぜ？", answer: "風があると汗が蒸発しやすくなり、体感温度が下がるからです！" },
+
+            // 日本（追加）
+            { category: "日本", grade: "low", title: "『いただきます』は感謝の言葉", intro: "食べる前に言うよね", surprise: "命や作った人への感謝です", reason: "食べ物は色んな力で届くから", comment: "言葉で気持ちをそろえる", question: "『ごちそうさま』は何に感謝？", answer: "走り回って食事を用意してくれたこと（馳走＝ちそう）への感謝です！" },
+            { category: "日本", grade: "mid", title: "日本は自動販売機が多い", intro: "街でよく見るよね", surprise: "世界でも多い国の一つです", reason: "治安や補充の仕組みがあるから", comment: "便利の集合体", question: "自販機で買える意外な物は？", answer: "おでん、お出汁、冷凍ラーメン、クレープなど色々なものがあります！" },
+            { category: "日本", grade: "all", title: "名字が広がったのはわりと最近", intro: "昔からみんな名字があった？", surprise: "庶民に広がったのは近代です", reason: "制度として整ったから", comment: "意外と新しい習慣", question: "名字がないと困る場面は？", answer: "人が増えたときに、だれのことか区別できなくて困ってしまいます！" },
+            { category: "日本", grade: "high", title: "和暦は時代で変わる", intro: "令和の前は？", surprise: "元号は変わります", reason: "天皇の代替わりなどで変わる", comment: "書類で困るやつ", question: "西暦と和暦、どっちが便利？", answer: "世界共通なら西暦、日本の時代を感じるなら和暦が便利ですね！" },
+            { category: "日本", grade: "mid", title: "『さしすせそ』は料理の順番", intro: "料理の『さしすせそ』って？", surprise: "調味料を入れる順の覚え方", reason: "砂糖→塩→酢→しょうゆ→みそ", comment: "家庭科の豆知識", question: "順番が違うとどうなる？", answer: "味がしっかり染み込まなかったり、香りが飛んでしまったりします！" },
+            { category: "日本", grade: "high", title: "日本の通学帽がある理由", intro: "なぜ帽子をかぶる？", surprise: "安全の目印になるから", reason: "見つけやすく事故防止", comment: "地域で色が違うことも", question: "他の国はどうしてる？", answer: "指定がない国や、反射材をカバンにつける国が多いです！" },
+            { category: "日本", grade: "mid", title: "温泉は『火山の国』の特典", intro: "温泉が多いのはなぜ？", surprise: "地面の下が熱い場所が多いから", reason: "火山活動が関係", comment: "地球の熱を使う", question: "温泉がない県はある？", answer: "日本のすべての都道府県に温泉があります！" },
+            { category: "日本", grade: "all", title: "お正月の『鏡もち』の形の意味", intro: "丸いおもちが重なってるよね", surprise: "丸は円満の意味", reason: "縁起をかつぐ文化", comment: "小さい儀式みたい", question: "他に縁起物は？", answer: "おせちの黒豆（まめに働く）やエビ（腰が曲がるまで長寿）などがあります！" },
+
+            // 季節（追加）
+            { category: "季節", grade: "low", title: "セミは地面の下で長く過ごす", intro: "セミは夏だけ？", surprise: "土の中で何年も過ごします", reason: "幼虫が根の汁を吸うから", comment: "夏は卒業式みたい", question: "何年くらいだと思う？", answer: "種類によりますが、数年〜長いものでは13年や17年（周期ゼミ）もいます！" },
+            { category: "季節", grade: "mid", title: "紅葉は葉の中の色が出てくる", intro: "秋に葉が赤くなるのはなぜ？", surprise: "緑が減って別の色が目立つ", reason: "光合成の成分が減るから", comment: "隠れてた色が登場", question: "黄色になる葉もあるのはなぜ？", answer: "寒くなると、もともと持っている黄色い色素（カロテノイド）が目立つようになるからです！" },
+            { category: "季節", grade: "all", title: "雪の結晶は形が同じになりにくい", intro: "雪の結晶は全部同じ？", surprise: "条件で形が変わります", reason: "温度や湿度で成長が変わる", comment: "空のアート", question: "六角形が多いのはなぜ？", answer: "水分子がくっつく時の角度（約120度）が影響して六角形になります！" },
+            { category: "季節", grade: "mid", title: "台風は海の熱で強くなる", intro: "台風はどこで育つ？", surprise: "暖かい海で強くなります", reason: "水蒸気がエネルギーになる", comment: "海が燃料", question: "上陸すると弱まる理由は？", answer: "海から水蒸気の『燃料』をもらえなくなり、山などの摩擦でブレーキがかかるからです！" },
+            { category: "季節", grade: "low", title: "春の眠気は体の調整", intro: "春って眠い？", surprise: "体が季節に合わせて調整中", reason: "気温差や生活変化で疲れる", comment: "体はがんばってる", question: "眠気対策は？", answer: "軽くストレッチをしたり、朝の太陽の光を浴びたりすると目覚めやすいです！" },
+            { category: "季節", grade: "high", title: "梅雨は『雨の種類』じゃなく『季節』", intro: "梅雨は雨の名前？", surprise: "季節の呼び方です", reason: "雨が続きやすい時期だから", comment: "毎日雨とは限らない", question: "梅雨前線って何？", answer: "冷たい空気と暖かい空気がぶつかってできる、雨を降らす雲の帯（おび）のことです！" },
+            { category: "季節", grade: "mid", title: "雷が多い日は空が不安定", intro: "雷が鳴る日は何が起きてる？", surprise: "空気が上下に激しく動いている", reason: "積乱雲ができるから", comment: "空の大ケンカ", question: "安全な場所はどこ？", answer: "丈夫な建物の中や、車の中が比較的安全です！" },
+            { category: "季節", grade: "all", title: "花粉は植物の『手紙』", intro: "花粉はなんのため？", surprise: "子孫を残すためです", reason: "受粉の材料になる", comment: "植物のメッセージ", question: "虫と風、どっちが運ぶ？", answer: "花の形によります！（派手な花は虫が、地味な花は風が運ぶことが多いです）" },
+
+            // 学校（追加）
+            { category: "学校", grade: "low", title: "黒板のチョークは石からできる", intro: "チョークは何でできてる？", surprise: "石（炭酸カルシウム）です", reason: "貝殻の成分と同じ仲間", comment: "海の名残が黒板に", question: "粉が出にくいチョークは何が違う？", answer: "ホタテの貝殻を再利用したり、手に粉がつかないようコーティングされています！" },
+            { category: "学校", grade: "mid", title: "消しゴムはゴムじゃないことが多い", intro: "消しゴムってゴム？", surprise: "樹脂でできていることが多い", reason: "よく消えるように工夫", comment: "名前は昔の名残", question: "昔の消しゴムは何だった？", answer: "昔はパンの白い部分（食パン）を使って文字を消していました！" },
+            { category: "学校", grade: "all", title: "ノートの罫線は集中を助ける", intro: "罫線がないとどうなる？", surprise: "文字の位置がぶれやすい", reason: "目が基準を探すから", comment: "線は先生の味方", question: "方眼ノートの良さは？", answer: "図やグラフが描きやすく、文字の大きさをそろえやすいところです！" },
+            { category: "学校", grade: "mid", title: "机の高さが合うと疲れにくい", intro: "机が高すぎると？", surprise: "肩がこりやすい", reason: "姿勢がくずれるから", comment: "道具も体の一部", question: "理想の座り方は？", answer: "足の裏が床にしっかりつき、膝と腰が90度になる姿勢が良いとされています！" },
+            { category: "学校", grade: "all", title: "朝の会は脳の『起動』", intro: "朝の会はなぜ大事？", surprise: "頭を学習モードにする", reason: "予定の見通しができるから", comment: "起動音みたいなもの", question: "あなたの起動スイッチは？", answer: "顔を洗う、朝ごはんを食べる、などのスイッチがあるといいですね！" },
+            { category: "学校", grade: "high", title: "テストの緊張は悪者じゃない", intro: "緊張するとダメ？", surprise: "集中を上げる働きもあります", reason: "体が『本番』に備えるから", comment: "緊張＝準備完了サイン", question: "緊張を味方にする方法は？", answer: "「自分は準備できているぞ」と思い込んだり、深呼吸をしたりすると味方になります！" },
+            { category: "学校", grade: "mid", title: "授業の『間』があると覚えやすい", intro: "ずっと話すとどうなる？", surprise: "脳が整理できない", reason: "短い間で記憶が固まりやすい", comment: "沈黙は学びの時間", question: "先生の話、どのくらいが聞きやすい？", answer: "1分や3分など、区切って話してもらう方が集中しやすいですね！" },
+            { category: "学校", grade: "all", title: "声の大きさは『腹』で決まる", intro: "大声は喉で出す？", surprise: "お腹の支えが大事です", reason: "息の量が増えるから", comment: "応援団の秘密", question: "小さい声を通すコツは？", answer: "口をたてに大きく開けて、遠くへ声を投げるようなイメージで話すことです！" },
+
+            // 歴史（追加）
+            { category: "歴史", grade: "mid", title: "昔の地図は『想像』も混ざっていた", intro: "昔の地図は正確？", surprise: "想像の絵も多かった", reason: "見たことない土地が多いから", comment: "世界を描くチャレンジ", question: "今の地図が正確なのはなぜ？", answer: "人工衛星からの写真や、GPSなどの正確に測る技術があるからです！" },
+            { category: "歴史", grade: "high", title: "昔の手紙は超スローSNS", intro: "昔は連絡どうしてた？", surprise: "手紙がメインでした", reason: "交通が遅かったから", comment: "既読も返信も遅い", question: "返信が1か月後でも平気？", answer: "昔の人は気長に待つのが当たり前だったので平気だったようです！" },
+            { category: "歴史", grade: "high", title: "時間の決め方は国で違った", intro: "昔の『正午』って同じ？", surprise: "地域でズレていました", reason: "太陽の位置で決めていたから", comment: "時計がない時代の工夫", question: "今はどうやって合わせる？", answer: "インターネットや電波時計などで、世界基準（標準時）の正しい時間に合わせています！" },
+            { category: "歴史", grade: "mid", title: "紙が広がって本が増えた", intro: "本は昔からあった？", surprise: "紙の普及で一気に増えました", reason: "書く材料が安くなったから", comment: "知識のコピー革命", question: "今の革命は何？", answer: "インターネットやスマホ、AIによる『情報の革命』が起きていますね！" },
+            { category: "歴史", grade: "high", title: "発明は『困った』から生まれがち", intro: "発明って天才だけ？", surprise: "困りごとがヒントになる", reason: "不便を減らしたいから", comment: "先生のアプリも同じ", question: "最近の『困った』は？", answer: "「ランドセルが重い」「忘れ物をする」などから新しい発明が生まれるかもしれません！" },
+            { category: "歴史", grade: "jhs", title: "昔の感染症対策も『距離』が鍵", intro: "昔はどう対策した？", surprise: "人が集まらない工夫もありました", reason: "うつり方の経験則があった", comment: "知恵は積み重なる", question: "経験から学ぶ例は？", answer: "失敗したり困ったりしたことから、「次は気をつけよう」と工夫することなど！" },
+            { category: "歴史", grade: "mid", title: "昔の買い物は『量り売り』が普通", intro: "昔のスーパーは？", surprise: "量り売りが多かった", reason: "包装材が少ないから", comment: "エコでもある", question: "量り売りの良さは？", answer: "必要な分だけ買えるので、無駄なゴミ（パッケージなど）が出ない点です！" },
+            { category: "歴史", grade: "high", title: "文字の形は道具で変わった", intro: "字の形はなぜ違う？", surprise: "筆・ペンなど道具で変化します", reason: "線の引き方が違うから", comment: "道具が文化を作る", question: "スマホで字は変わった？", answer: "書くことより「打つ・選ぶ」ことが増えて、漢字を忘れやすくなったかもしれませんね！" }
+        ];
+
+        // ====== ユーティリティ ======
+        const $ = (id) => document.getElementById(id);
+
+        function todayKey() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const da = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${da}`;
+        }
+
+        // 文字列ハッシュ（seed用）
+        function hashStr(str) {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return h >>> 0;
+        }
+
+        // Mulberry32 RNG
+        function mulberry32(a) {
+            return function () {
+                let t = a += 0x6D2B79F5;
+                t = Math.imul(t ^ (t >>> 15), t | 1);
+                t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function gradeLabel(g) {
+            return ({ all: "指定なし", low: "低学年", mid: "中学年", high: "高学年", jhs: "中学生" }[g] ?? g);
+        }
+
+        function shortText(t) {
+            return `【${t.title}】\n導入：${t.intro}\nえっ！：${t.surprise}\n質問：${t.question}\nこたえ：${t.answer || ""}`;
+        }
+
+        function fullText(t) {
+            return `【${t.title}】\n\n●導入\n${t.intro}\n\n●えっ！ポイント\n${t.surprise}\n\n●なぜ？\n${t.reason}\n\n●先生のひとこと\n${t.comment}\n\n●みんなに質問\n${t.question}\n\n●こたえ・ヒント\n${t.answer || ""}`;
+        }
+
+        // ====== 状態 ======
+        const storage = {
+            getFav() { return JSON.parse(localStorage.getItem("ct_fav") || "[]"); },
+            setFav(v) { localStorage.setItem("ct_fav", JSON.stringify(v)); },
+            getHist() { return JSON.parse(localStorage.getItem("ct_hist") || "[]"); },
+            setHist(v) { localStorage.setItem("ct_hist", JSON.stringify(v)); },
+        };
+
+        let current = null;
+        let isShort = false;
+
+        // ====== フィルタ ======
+        function filteredList() {
+            const g = $("grade").value;
+            const c = $("category").value;
+            return TRIVIA.filter(t => {
+                const okGrade = (g === "all") || (t.grade === "all") || (t.grade === g);
+                const okCat = (c === "all") || (t.category === c);
+                return okGrade && okCat;
+            });
+        }
+
+        // ====== 抽選 ======
+        function pickOne() {
+            const list = filteredList();
+            if (list.length === 0) return null;
+
+            const fixed = $("todayFixed").checked;
+            if (!fixed) {
+                const idx = Math.floor(Math.random() * list.length);
+                return list[idx];
+            }
+
+            // 今日固定：日付+条件でseed
+            const seedStr = todayKey() + "|" + $("grade").value + "|" + $("category").value + "|教室トリビア";
+            const rng = mulberry32(hashStr(seedStr));
+            const idx = Math.floor(rng() * list.length);
+            return list[idx];
+        }
+
+        // ====== 表示 ======
+        function renderTrivia(t) {
+            current = t;
+            $("tTitle").textContent = t.title;
+
+            const meta = [];
+            meta.push(`<span class="pill">カテゴリ：${t.category}</span>`);
+            meta.push(`<span class="pill">学年：${gradeLabel($("grade").value)}</span>`);
+            meta.push(`<span class="pill">表示：${isShort ? "短縮" : "通常"}</span>`);
+            $("tMeta").innerHTML = meta.join("");
+
+            const body = [];
+            body.push(`<div class="section"><b>導入</b><p>${escapeHtml(t.intro)}</p></div>`);
+            body.push(`<div class="section"><b>えっ！ポイント</b><p>${escapeHtml(t.surprise)}</p></div>`);
+            if (!isShort) {
+                body.push(`<div class="section"><b>なぜ？</b><p>${escapeHtml(t.reason)}</p></div>`);
+                body.push(`<div class="section"><b>先生のひとこと</b><p>${escapeHtml(t.comment)}</p></div>`);
+            }
+            body.push(`<div class="section"><b>みんなに質問</b><p>${escapeHtml(t.question)}</p></div>`);
+            $("tBody").innerHTML = body.join("");
+
+            $("tAnswer").style.display = "none";
+            if (t.answer) {
+                $("tAnswerText").textContent = t.answer;
+                $("answerBtnRow").style.display = "flex";
+            } else {
+                $("answerBtnRow").style.display = "none";
+            }
+
+            // favボタン表示
+            const fav = storage.getFav();
+            const key = triviaKey(t);
+            const isFav = fav.some(x => x.key === key);
+            $("btnFav").textContent = isFav ? "★ お気に入り解除" : "☆ お気に入り";
+
+            // 履歴追加（重複は先頭に移動）
+            pushHistory(t);
+            renderFav();
+            renderHistory();
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function triviaKey(t) {
+            // title+category で一意っぽく
+            return `${t.category}::${t.title}`;
+        }
+
+        // ====== お気に入り ======
+        function toggleFav() {
+            if (!current) return;
+            const fav = storage.getFav();
+            const key = triviaKey(current);
+            const idx = fav.findIndex(x => x.key === key);
+            if (idx >= 0) {
+                fav.splice(idx, 1);
+            } else {
+                fav.unshift({ key, trivia: current, at: Date.now() });
+            }
+            storage.setFav(fav);
+            renderTrivia(current);
+        }
+
+        function renderFav() {
+            const fav = storage.getFav();
+            const box = $("favList");
+            if (fav.length === 0) {
+                box.innerHTML = `<div class="small">まだありません。気に入ったネタは「☆お気に入り」で保存できます。</div>`;
+                return;
+            }
+            box.innerHTML = fav.map(item => {
+                const t = item.trivia;
+                return `
+      <div class="mini">
+        <div class="t">${escapeHtml(t.title)}</div>
+        <div class="m">カテゴリ：${escapeHtml(t.category)} / ${escapeHtml(t.intro)}</div>
+        <div class="actions">
+          <button class="secondary" data-act="showFav" data-key="${escapeHtml(item.key)}">表示</button>
+          <button class="danger" data-act="delFav" data-key="${escapeHtml(item.key)}">削除</button>
+        </div>
+      </div>
+    `;
+            }).join("");
+        }
+
+        // ====== 履歴 ======
+        function pushHistory(t) {
+            const hist = storage.getHist();
+            const key = triviaKey(t);
+
+            const filtered = hist.filter(x => x.key !== key);
+            filtered.unshift({ key, trivia: t, at: Date.now() });
+            const limited = filtered.slice(0, 10);
+
+            storage.setHist(limited);
+        }
+
+        function renderHistory() {
+            const hist = storage.getHist();
+            const box = $("historyList");
+            if (hist.length === 0) {
+                box.innerHTML = `<div class="small">まだありません。「トリビアを出す」で履歴に残ります。</div>`;
+                return;
+            }
+            box.innerHTML = hist.map(item => {
+                const t = item.trivia;
+                return `
+      <div class="mini">
+        <div class="t">${escapeHtml(t.title)}</div>
+        <div class="m">カテゴリ：${escapeHtml(t.category)} / ${escapeHtml(t.surprise)}</div>
+        <div class="actions">
+          <button class="secondary" data-act="showHist" data-key="${escapeHtml(item.key)}">表示</button>
+        </div>
+      </div>
+    `;
+            }).join("");
+        }
+
+        function findByKey(key) {
+            // fav/hist から探す
+            const fav = storage.getFav();
+            const f = fav.find(x => x.key === key);
+            if (f) return f.trivia;
+
+            const hist = storage.getHist();
+            const h = hist.find(x => x.key === key);
+            if (h) return h.trivia;
+
+            // TRIVIAからも探す
+            const [cat, title] = key.split("::");
+            return TRIVIA.find(t => t.category === cat && t.title === title) || null;
+        }
+
+        // ====== コピー ======
+        async function copyScript() {
+            if (!current) return;
+            const text = isShort ? shortText(current) : fullText(current);
+            try {
+                await navigator.clipboard.writeText(text);
+                $("btnCopy").textContent = "コピーしました";
+                setTimeout(() => $("btnCopy").textContent = "台本をコピー", 900);
+            } catch (e) {
+                // fallback
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                ta.remove();
+                $("btnCopy").textContent = "コピーしました";
+                setTimeout(() => $("btnCopy").textContent = "台本をコピー", 900);
+            }
+        }
+
+        // ====== イベント ======
+        $("btnPick").addEventListener("click", () => {
+            const t = pickOne();
+            if (!t) {
+                alert("条件に合うトリビアがありません。学年またはカテゴリを変えてください。");
+                return;
+            }
+            renderTrivia(t);
+        });
+
+        $("btnShort").addEventListener("click", () => {
+            isShort = !isShort;
+            $("btnShort").textContent = isShort ? "通常モード" : "短縮モード";
+            if (current) renderTrivia(current);
+        });
+
+        $("btnShowAnswer").addEventListener("click", () => {
+            $("answerBtnRow").style.display = "none";
+            $("tAnswer").style.display = "block";
+        });
+
+        $("btnFav").addEventListener("click", toggleFav);
+        $("btnCopy").addEventListener("click", copyScript);
+
+        $("btnClearFav").addEventListener("click", () => {
+            storage.setFav([]);
+            renderFav();
+        });
+
+        $("btnClearHistory").addEventListener("click", () => {
+            storage.setHist([]);
+            renderHistory();
+        });
+
+        $("favList").addEventListener("click", (e) => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+            const act = btn.dataset.act;
+            const key = btn.dataset.key;
+            if (!act || !key) return;
+
+            if (act === "showFav") {
+                const t = findByKey(key);
+                if (t) renderTrivia(t);
+            }
+            if (act === "delFav") {
+                const fav = storage.getFav().filter(x => x.key !== key);
+                storage.setFav(fav);
+                renderFav();
+                if (current && triviaKey(current) === key) {
+                    $("btnFav").textContent = "☆ お気に入り";
+                }
+            }
+        });
+
+        $("historyList").addEventListener("click", (e) => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+            const act = btn.dataset.act;
+            const key = btn.dataset.key;
+            if (act !== "showHist") return;
+            const t = findByKey(key);
+            if (t) renderTrivia(t);
+        });
+
+        $("grade").addEventListener("change", () => {
+            // 今日固定ONの時は、条件変更で内容が変わるので表示更新したい場合は押し直しでOK
+        });
+        $("category").addEventListener("change", () => { });
+
+        // ====== 初期化 ======
+        function init() {
+            $("countPill").textContent = `データ: ${TRIVIA.length}件`;
+            renderFav();
+            renderHistory();
+            // 起動時に1件出す（好みでOFFでもOK）
+            const t = pickOne();
+            if (t) renderTrivia(t);
+        }
+        init();
+    </script>
+</body>
+
+</html>

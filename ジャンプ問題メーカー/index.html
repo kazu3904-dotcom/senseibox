@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小学校ジャンプ問題メーカー | 教師を救うAIシリーズ</title>
+    <meta name="description" content="授業の導入と終末を変える、思考を深める発問生成アプリ。">
+    <style>
+        :root {
+            /* Color Palette - Reliable Education Theme */
+            --primary: #0056b3; /* Deep Blue */
+            --primary-light: #e3f2fd;
+            --secondary: #00897b; /* Teal */
+            --accent: #f57f17; /* Amber */
+            --text-main: #333333;
+            --text-sub: #666666;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --border: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+            --font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background: var(--bg-card);
+            padding: 20px 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .brand-subtitle {
+            font-size: 0.8rem;
+            color: var(--secondary);
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-weight: normal;
+        }
+
+        /* Main Container */
+        main {
+            flex: 1;
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* UI Controls Section */
+        .controls {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+
+        /* Selects */
+        select {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-body);
+            color: var(--text-main);
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        /* Scene Selection */
+        .scene-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .scene-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: var(--bg-body);
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .scene-btn.active.scene-intro {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #e65100;
+        }
+
+        .scene-btn.active.scene-end {
+            background: #e8eaf6;
+            border-color: #3f51b5;
+            color: #1a237e;
+        }
+
+        /* Action Buttons */
+        .action-area {
+            margin-top: 12px;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            box-shadow: 0 4px 0 #004d40;
+        }
+
+        .btn-generate:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #004d40;
+        }
+
+        .btn-subtext {
+            font-size: 0.75rem;
+            font-weight: normal;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Result Card */
+        .result-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .result-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .question-badge {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-body);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .question-text {
+            font-size: 1.35rem;
+            font-weight: bold;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin: 20px 0;
+            white-space: pre-wrap;
+        }
+
+        .teacher-tip {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border);
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            font-style: italic;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            align-self: center;
+        }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+
+        /* Fallback Indicator */
+        .fallback-notice {
+            font-size: 0.7rem;
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            display: none;
+            font-weight: bold;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.75rem;
+            color: #999;
+            background: var(--bg-body);
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="brand-subtitle">教師を救うAIシリーズ</span>
+    <h1>小学校ジャンプ問題メーカー</h1>
+    <span class="tagline">たった1問で、授業は変わる。</span>
+</header>
+
+<main>
+    <!-- Controls -->
+    <div class="controls">
+        
+        <!-- School Level Removed (Always Elementary) -->
+
+        <!-- Grade -->
+        <div class="control-group">
+            <label class="label">学年</label>
+            <select id="gradeSelect"></select>
+        </div>
+
+        <!-- Subject -->
+        <div class="control-group">
+            <label class="label">教科</label>
+            <select id="subjectSelect">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+
+        <!-- Unit -->
+        <div class="control-group">
+            <label class="label">単元</label>
+            <select id="unitSelect">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+
+        <!-- Scene -->
+        <div class="control-group">
+            <label class="label">授業の場面</label>
+            <div class="scene-selector">
+                <div class="scene-btn active scene-intro" onclick="setScene('intro')">
+                    <span>🔥</span> 導入
+                </div>
+                <div class="scene-btn scene-end" onclick="setScene('end')">
+                    <span>⭐</span> 終末
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Buttons -->
+        <div class="action-area">
+            <button class="btn-generate" onclick="generate()">
+                ジャンプ問題を生成
+                <span class="btn-subtext">思考を深める問い</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Result Display -->
+    <div id="resultCard" class="result-card">
+        <div class="question-badge" id="resBadge">Ready</div>
+        <div class="question-text" id="resText">条件を選択して<br>ボタンを押してください。</div>
+        <div class="teacher-tip" id="resTip" style="display:none;"></div>
+        <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()" style="display:none;">クリップボードにコピー</button>
+        <div class="fallback-notice" id="fallbackNotice"></div>
+    </div>
+
+</main>
+
+<footer>
+    © 2024 Educational Design Lab. <br>Designed for Offline Use.
+</footer>
+
+<div id="toast">問題をコピーしました</div>
+
+<script>
+    /**
+     * DATA STRUCTURES
+     * ----------------
+     */
+
+    const CONFIG = {
+        elem: {
+            grades: [1, 2, 3, 4, 5, 6],
+            subjects: ['算数', '国語', '理科', '社会', '英語'] // Updated: Added English, Removed Moral
+        }
+    };
+
+    // Popular Units Mapping (Subject -> Grade -> Units)
+    const UNITS = {
+        '算数': {
+            1: ['たしざん ★人気', 'ひきざん', 'かたちづくり', 'おおきなかず'],
+            2: ['かけ算(九九) ★人気', '長さ', '水のかさ', 'はこの形'],
+            3: ['わり算 ★人気', '円と球', '小数', '重さ'],
+            4: ['角の大きさ', '割り算の筆算', '面積 ★人気', '分数'],
+            5: ['小数のかけ算', '小数のわり算', '分数', '割合 ★人気', '円と正多角形', '速さ ★人気'],
+            6: ['対称な図形', '文字と式', '分数のかけ算', '分数のわり算', '比 ★人気', '拡大図と縮図']
+        },
+        '英語': {
+            3: ['挨拶(Hello) ★人気', '数と色', '好きなもの(Likes)', 'アルファベット'],
+            4: ['時間(Time)', '天気(Weather)', '文房具', '学校生活'],
+            5: ['誕生日(Birthday)', 'できること(Can)', '教科', '道案内'],
+            6: ['夏休みの思い出', '将来の夢 ★人気', '日本の文化', '小学校の思い出']
+        },
+        // Generic fallback units for other subjects
+        'default': ['基本', '応用', '発展', 'まとめ']
+    };
+
+    // Question Database
+    // Structure: type(I=Intro, E=End), q(Question text), tip(Teacher tip)
+    // Note: 'l' (level) removed as per unification request, but kept internally for variety logic if needed
+    const QUESTION_BANK = [
+        // ==========================================
+        // 算数 小1
+        // ==========================================
+        // たしざん
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'I', q: '「答えが10になるたしざん」を、できるだけたくさん見つけましょう。', tip: '「1+9」だけでなく「10+0」や「3つの数」が出るか見守りましょう。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'I', q: 'ここに「3」があります。あといくつで「10」になりますか？おはじきを使わずに言えるかな？', tip: '補数の概念の確認です。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'I', q: '「3+4」と「4+3」。どうして答えが同じになると思いますか？', tip: '交換法則への気づきを促します。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'I', q: 'たしざんを使うのはどんな時ですか？「ふえる」とき？それとも「あわせる」とき？', tip: '場面の区別を意識させます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'E', q: 'もし、世の中から「+」という記号が消えてしまったら、どうやって計算を伝えますか？', tip: '「あわせる」「ふえる」などの言葉の定義に立ち返らせます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'E', q: '今日習った計算を使って、お家の人にクイズを出してね。どんなクイズにしますか？', tip: '作問による理解の定着を図ります。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'たしざん', t: 'E', q: '「たしざん」の得意技を見つけましたか？どんな計算ならすぐに答えが出せますか？', tip: 'メタ認知を促します。' },
+        
+        // ひきざん
+        { s: 'elem', g: 1, sub: '算数', u: 'ひきざん', t: 'I', q: '「10-3=7」という式になるお話を、絵本のように作ってみてください。', tip: '求残と求差の違いに注目します。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'ひきざん', t: 'I', q: 'ひきざんは「へる」ことですか？それとも「ちがい」をみることですか？', tip: '減法の二つの意味（除去、比較）を問いかけます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'ひきざん', t: 'I', q: 'ひきざんの答えが「0」になるのは、どんな時ですか？', tip: '同じ数を引くという概念を確認します。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'ひきざん', t: 'E', q: 'たしざんとひきざん、どちらが好きですか？その理由はなんですか？', tip: '計算に対する感情や得意不得意を言語化させます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'ひきざん', t: 'E', q: '10からどんどん数を引いていきます。これ以上引けなくなるのはいつですか？', tip: '数の限界（負の数の手前）への感覚を養います。' },
+
+        // かたちづくり
+        { s: 'elem', g: 1, sub: '算数', u: 'かたちづくり', t: 'I', q: '三角の色板を2枚使って、四角形は作れますか？では、3枚だとどんな形ができますか？', tip: '図形の合成・分解の感覚を養います。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'かたちづくり', t: 'I', q: 'どうして積み木には「丸い形」のものが少ない（または多い）のでしょうか？', tip: '転がりやすさなど、機能と形状の関係を考えさせます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'かたちづくり', t: 'I', q: '教室の中で「しかく」を探してください。それは「ましかく」ですか？「ながしかく」ですか？', tip: '正方形と長方形の区別の素地を作ります。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'かたちづくり', t: 'E', l: 'S', q: '目をつぶって、手触りだけで「さんかく」と「しかく」を見分けることはできますか？どこでわかりますか？', tip: '頂点や辺の数への着目を促します。' },
+        
+        // おおきなかず
+        { s: 'elem', g: 1, sub: '算数', u: 'おおきなかず', t: 'I', q: '「100」より大きい数を、教室の中から探してみましょう。', tip: '教科書のページ数、文字数など、数へのアンテナを立てさせます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'おおきなかず', t: 'I', q: '100円玉と10円玉10枚、お財布に入れるならどっちがいい？', tip: '位取り記数法や利便性の観点から考えさせます。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'おおきなかず', t: 'E', q: '数はどこまで続くと思いますか？一番大きい数はあるのでしょうか？', tip: '無限の概念への素朴な疑問を引き出します。' },
+        { s: 'elem', g: 1, sub: '算数', u: 'おおきなかず', t: 'E', q: '99の次は100です。位が一つ増える瞬間を、どうやってお祝いしますか？', tip: '位取りの繰り上がりをイベントとして印象付けます。' },
+
+        // ==========================================
+        // 算数 小2
+        // ==========================================
+        // かけ算
+        { s: 'elem', g: 2, sub: '算数', u: 'かけ算(九九)', t: 'I', q: '「3×4」と「4×3」。答えは同じですが、絵に描くとどんな違いがありますか？', tip: '構造的な違いを意識させます。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'かけ算(九九)', t: 'I', q: '身の回りにあるもので、「かけ算」で数えられるものを探してみましょう。', tip: 'ロッカー、窓、タイルの目地などへの着目を促します。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'かけ算(九九)', t: 'I', q: 'たし算があれば、かけ算はいらない？かけ算のいいところはどこでしょう？', tip: '簡潔さ、処理速度の利点を考えさせます。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'かけ算(九九)', t: 'E', q: '九九の表の中に、答えが同じになるかけ算はいくつありますか？一番多い答えは何でしょう？', tip: '法則性を探す探究活動へつなげます。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'かけ算(九九)', t: 'E', q: '九九を全部足すと、答えは偶数ですか？奇数ですか？計算せずに予想できますか？', tip: '数の性質への興味を引きます。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'かけ算(九九)', t: 'E', q: 'もし「10の段」を作るとしたら、どんな九九になりますか？', tip: '十進法の規則性に気づかせます。' },
+
+        // 長さ
+        { s: 'elem', g: 2, sub: '算数', u: '長さ', t: 'I', q: 'もし、世界中の定規の目盛りがバラバラだったら、どんな困ったことが起きますか？', tip: '普遍単位の必要性を実感させます。' },
+        { s: 'elem', g: 2, sub: '算数', u: '長さ', t: 'I', q: '消しゴムの長さを測るのに、30cm定規と1mものさし、どっちが使いやすいですか？', tip: '適切な道具の選択を考えさせます。' },
+        { s: 'elem', g: 2, sub: '算数', u: '長さ', t: 'E', q: '「1メートル」は、誰がどうやって決めた長さだと思いますか？', tip: '単位の定義や歴史への興味につなげます。' },
+        { s: 'elem', g: 2, sub: '算数', u: '長さ', t: 'E', q: 'あなたの体の一部を使って、だいたい10cmの場所を見つけてください。', tip: '量感（身体尺）を養います。' },
+
+        // 水のかさ
+        { s: 'elem', g: 2, sub: '算数', u: '水のかさ', t: 'I', q: '細長いコップと、太くて低いコップ。どちらがたくさん水が入るか、道具を使わずに比べる方法はありますか？', tip: '直接比較のアイデアを出させます。' },
+        { s: 'elem', g: 2, sub: '算数', u: '水のかさ', t: 'I', q: '1L（リットル）の牛乳パック。これを別の形に変えたら、入る水の量は変わりますか？', tip: '等積変形の素地となる保存性の概念です。' },
+        { s: 'elem', g: 2, sub: '算数', u: '水のかさ', t: 'E', q: '1L（リットル）の形を作るとしたら、どんな形が一番持ち運びやすいですか？', tip: '量と形状の関係を考えさせます。' },
+        { s: 'elem', g: 2, sub: '算数', u: '水のかさ', t: 'E', q: 'dL（デシリットル）という単位を、家の中で見たことはありますか？なぜあまり見ないのでしょう？', tip: '生活と算数の乖離、単位の実用性について触れます。' },
+
+        // はこの形
+        { s: 'elem', g: 2, sub: '算数', u: 'はこの形', t: 'I', q: 'サイコロの目は、どうして向かい合う面を足すと7になるのでしょうか？', tip: '約束事や構造への気づきを促します。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'はこの形', t: 'I', q: 'ボールとサイコロ、積み上げるならどっち？それはなぜ？', tip: '平面と曲面の特徴を言語化させます。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'はこの形', t: 'E', q: '箱を作るのに、面は最低何枚必要ですか？', tip: '立体の構成要素（面・辺・頂点）の最小単位を考えさせます。' },
+        { s: 'elem', g: 2, sub: '算数', u: 'はこの形', t: 'E', q: 'すべての面が同じ形をしている箱はありますか？それはどんな箱ですか？', tip: '立方体（正六面体）の定義を確認します。' },
+
+        // ==========================================
+        // 算数 小3
+        // ==========================================
+        // わり算
+        { s: 'elem', g: 3, sub: '算数', u: 'わり算', t: 'I', q: '「12÷3」の式になるお話を、できるだけ違う場面で作ってください。', tip: '等分除（分ける）と包含除（いくつ入る）の違いが出るか注目。' },
+        { s: 'elem', g: 3, sub: '算数', u: 'わり算', t: 'I', q: '12個のクッキーを分けるとき、喧嘩にならない分け方は何通りありますか？', tip: '約数の概念への入り口です。' },
+        { s: 'elem', g: 3, sub: '算数', u: 'わり算', t: 'I', q: '「わり算」は「ひき算」の兄弟だと言ったら、どういう意味だと思いますか？', tip: '累減法としての除法の見方を提示します。' },
+        { s: 'elem', g: 3, sub: '算数', u: 'わり算', t: 'E', q: 'あまりが出るわり算と、出ないわり算。生活の中で「あまりが出ると困る」のはどんな時ですか？', tip: '数理を日常に接続させます。' },
+        { s: 'elem', g: 3, sub: '算数', u: 'わり算', t: 'E', q: 'あまりは、わる数より大きくてもいいですか？ダメなら、それはなぜですか？', tip: '除法の仕組みの核心に触れます。' },
+
+        // 円と球
+        { s: 'elem', g: 3, sub: '算数', u: '円と球', t: 'I', q: '運動会の玉入れの円は、どうやって描けば全員がカゴから同じ距離になりますか？', tip: '円の定義（中心からの距離が等しい点の集合）を体験させます。' },
+        { s: 'elem', g: 3, sub: '算数', u: '円と球', t: 'I', q: 'コンパスがない時、あなたならどうやってきれいな円を描きますか？', tip: '紐を使う、指を使うなど、道具の本質的な機能を考えさせます。' },
+        { s: 'elem', g: 3, sub: '算数', u: '円と球', t: 'E', q: '自然界（動物や植物、宇宙）に「完全な球」は存在すると思いますか？', tip: '理想的な図形と現実の物質の違いを考えます。' },
+        { s: 'elem', g: 3, sub: '算数', u: '円と球', t: 'E', q: 'ボールを切った切り口は、どこを切っても円になりますか？', tip: '球の断面図の性質を想像させます。' },
+
+        // 小数
+        { s: 'elem', g: 3, sub: '算数', u: '小数', t: 'I', q: '0と1の間には、数はありますか？あるとしたら、いくつくらいあると思いますか？', tip: '数の連続性と稠密性への入り口です。' },
+        { s: 'elem', g: 3, sub: '算数', u: '小数', t: 'I', q: '2.9と3.0、大きさはほとんど同じですが、意味はどう違いますか？', tip: '概数や測定誤差、位取りの意味を考えさせます。' },
+        { s: 'elem', g: 3, sub: '算数', u: '小数', t: 'E', q: '「0.1」が10個集まると「1」。では、「0.1」が100個集まるといくつですか？', tip: '位取り記数法の仕組みを確認します。' },
+        { s: 'elem', g: 3, sub: '算数', u: '小数', t: 'E', q: '小数を使うと便利なのはどんな時ですか？整数だけでは困ることはありますか？', tip: '端数処理の必要性を実感させます。' },
+
+        // 重さ
+        { s: 'elem', g: 3, sub: '算数', u: '重さ', t: 'I', q: '「大きいものほど重い」というのは本当ですか？反例（小さくても重いもの）を探してみましょう。', tip: '体積と重量、密度の概念の素地を作ります。' },
+        { s: 'elem', g: 3, sub: '算数', u: '重さ', t: 'I', q: '空気にも重さはあると思いますか？どうすれば測れるでしょう？', tip: '目に見えないものの量感について問いかけます。' },
+        { s: 'elem', g: 3, sub: '算数', u: '重さ', t: 'E', q: '1kgの綿と1kgの鉄、持った時に「重い」と感じるのはどちらですか？', tip: '物理的な重さと心理的な重さ、体積の影響を議論します。' },
+        { s: 'elem', g: 3, sub: '算数', u: '重さ', t: 'E', q: 'もし重力がなくなったら、天秤（てんびん）は使えますか？体重計はどうですか？', tip: '質量の測定原理（重力依存）に触れます。' },
+
+        // ==========================================
+        // 算数 小4
+        // ==========================================
+        // 角の大きさ
+        { s: 'elem', g: 4, sub: '算数', u: '角の大きさ', t: 'I', q: '分度器がまだなかった頃、昔の人はどうやって「角の大きさ」を伝えていたと思いますか？', tip: '時計の針や扇の開き具合など、身近な比喩を引き出します。' },
+        { s: 'elem', g: 4, sub: '算数', u: '角の大きさ', t: 'I', q: '角の大きさを変えると、三角形の形はどう変わりますか？', tip: '角と図形の形状の関係性に注目させます。' },
+        { s: 'elem', g: 4, sub: '算数', u: '角の大きさ', t: 'E', q: '一周はなぜ360度なのでしょうか？100度ではだめだったのでしょうか？', tip: '約数が多い数の利便性（60進法）に触れます。' },
+        { s: 'elem', g: 4, sub: '算数', u: '角の大きさ', t: 'E', q: '179度と180度、見た目で違いがわかりますか？1度の違いはどれくらい重要でしょう？', tip: '微細な違いが結果に与える影響（建築など）を想像させます。' },
+
+        // 割り算の筆算
+        { s: 'elem', g: 4, sub: '算数', u: '割り算の筆算', t: 'I', q: '筆算の計算は、なぜ「上の位」から計算するのでしょうか？たし算やひき算は「下の位」からなのに。', tip: '概数を捉えることの重要性、お金を分けるイメージにつなげます。' },
+        { s: 'elem', g: 4, sub: '算数', u: '割り算の筆算', t: 'I', q: '「たてる・かける・ひく・おろす」。この呪文を忘れたら、どうやって計算しますか？', tip: 'アルゴリズムの意味理解を問います。' },
+        { s: 'elem', g: 4, sub: '算数', u: '割り算の筆算', t: 'E', q: '電卓があれば筆算はいらない？筆算の仕組みを知っていることの良さは何でしょう。', tip: 'アルゴリズムの理解の価値を問います。' },
+        { s: 'elem', g: 4, sub: '算数', u: '割り算の筆算', t: 'E', q: '商が2桁になる時と、3桁になる時の見分け方はありますか？計算前にわかりますか？', tip: '見積もりの力を養います。' },
+
+        // 面積
+        { s: 'elem', g: 4, sub: '算数', u: '面積', t: 'I', q: 'L字型の土地の面積。公式を使わずに、あなたならどうやって求めますか？', tip: '等積変形や分割のアイデアを出させます。' },
+        { s: 'elem', g: 4, sub: '算数', u: '面積', t: 'I', q: '面積が100㎠になる長方形は、何種類作れますか？細長いものと正方形に近いもの、どちらが周りの長さが長いですか？', tip: '面積一定時の周長の変化を探ります。' },
+        { s: 'elem', g: 4, sub: '算数', u: '面積', t: 'E', q: '周りの長さが同じなら、面積も同じになりますか？紐を使って実験してみましょう。', tip: '等周問題への入り口です。' },
+        { s: 'elem', g: 4, sub: '算数', u: '面積', t: 'E', q: '教室の中で、面積が1㎡くらいのものを探してみましょう。', tip: '量感の育成です。' },
+
+        // 分数
+        { s: 'elem', g: 4, sub: '算数', u: '分数', t: 'I', q: '「1/2」と「1/3」、大きいのはどっち？ピザでイメージしてみよう。', tip: '分母が大きいほど数は小さくなる逆説性を確認します。' },
+        { s: 'elem', g: 4, sub: '算数', u: '分数', t: 'I', q: '1メートルを3つに分けた一つ分は「約33.3cm」ですが、分数なら「1/3m」です。どちらが正確ですか？', tip: '分数の「正確性」という利点に気づかせます。' },
+        { s: 'elem', g: 4, sub: '算数', u: '分数', t: 'E', q: '分数と小数、どちらが便利ですか？使い分けのルールを自分なりに決めてみましょう。', tip: '表現形式の特性（割り切れない数の表現など）を考えます。' },
+        { s: 'elem', g: 4, sub: '算数', u: '分数', t: 'E', q: '帯分数（1と1/2）と仮分数（3/2）。計算しやすいのはどっち？大きさがわかりやすいのはどっち？', tip: '用途による使い分けを意識させます。' },
+
+        // ==========================================
+        // 算数 小5
+        // ==========================================
+        // 小数のかけ算
+        { s: 'elem', g: 5, sub: '算数', u: '小数のかけ算', t: 'I', q: '整数×小数の計算。答えが「元の数より小さくなる」のはどんな時ですか？', tip: 'かける数が1より小さい場合の関係性を発見させます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '小数のかけ算', t: 'I', q: '2.5mの重さがわかっている鉄の棒。1mの重さを知りたい時、かけ算？わり算？', tip: '単位量あたりの大きさの考え方を確認します。' },
+        { s: 'elem', g: 5, sub: '算数', u: '小数のかけ算', t: 'E', q: '2.5 × 4 = 10。計算結果が整数になる小数のかけ算を、他にも見つけてください。', tip: '数の組み合わせのセンスを磨きます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '小数のかけ算', t: 'E', q: '小数点の位置を間違えると、答えはどう変わってしまいますか？', tip: '位取りの重要性を再確認します。' },
+
+        // 小数のわり算
+        { s: 'elem', g: 5, sub: '算数', u: '小数のわり算', t: 'I', q: '「2÷0.5」は「2の中に0.5がいくつあるか」。図で描けますか？', tip: '包含除のイメージを操作させます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '小数のわり算', t: 'I', q: 'わり算の筆算で、小数点を動かして計算しても答えが変わらないのはなぜですか？', tip: '商の恒等性（わられる数とわる数に同じ数をかけても商は変わらない）を確認します。' },
+        { s: 'elem', g: 5, sub: '算数', u: '小数のわり算', t: 'E', q: 'わり算なのに、答えが元の数より大きくなる。これってどんな魔法？', tip: '1より小さい数で割る（拡大）の意味を深めます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '小数のわり算', t: 'E', q: '割り切れない時、どこまで計算しますか？「概数」にする判断基準は何でしょう？', tip: '実生活での妥当性を考えさせます。' },
+
+        // 分数
+        { s: 'elem', g: 5, sub: '算数', u: '分数', t: 'I', q: '通分しないと、なぜたし算ができないのでしょうか？', tip: '単位を揃えることの必要性を考えさせます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '分数', t: 'I', q: '約分は「しなくてはいけない」ものですか？しなくても数は同じなのに。', tip: '数学的な「美しさ」や「わかりやすさ」の価値観を問います。' },
+        { s: 'elem', g: 5, sub: '算数', u: '分数', t: 'E', q: '分数のたし算とひき算、日常生活で使う場面はありますか？', tip: '料理の計量、時間の計算など具体例を探させます。' },
+        
+        // 割合
+        { s: 'elem', g: 5, sub: '算数', u: '割合', t: 'I', q: '「全校の30%がメガネ」。この情報だけで、メガネをかけていない人数はわかりますか？', tip: '割合と実数の区別を確認します。' },
+        { s: 'elem', g: 5, sub: '算数', u: '割合', t: 'I', q: '「定価」と「売値」の違いを、お店屋さんになったつもりで説明してください。', tip: '言葉の定義を自分事として捉えさせます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '割合', t: 'E', q: 'スーパーの「2割引き」と「200円引き」。どちらが得かは、何によって決まりますか？', tip: '基準量（元の値段）の重要性に気づかせます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '割合', t: 'E', q: '成功率100%の手術と、成功率99%の手術。1%の違いをどう感じますか？', tip: '確率・割合の感覚的理解を問います。' },
+
+        // 円と正多角形
+        { s: 'elem', g: 5, sub: '算数', u: '円と正多角形', t: 'I', q: '円周率は約3.14ですが、もしこれが「3」きっかりだったら、タイヤの形はどう変わりますか？', tip: '円の性質と円周率の関係を思考実験します。' },
+        { s: 'elem', g: 5, sub: '算数', u: '円と正多角形', t: 'I', q: 'コンパスを使わずに正六角形を描く方法はありますか？', tip: '円の半径と弦の長さの関係（正三角形の集合）に気づかせます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '円と正多角形', t: 'E', q: '正多角形の角をどんどん増やしていくと、最後はどうなりますか？', tip: '極限の考え方に触れます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '円と正多角形', t: 'E', q: '円の面積の公式（半径×半径×3.14）は、四角形の面積の公式と関係がありますか？', tip: '等積変形による公式の導出（円を細かく切って並べる）を想起させます。' },
+
+        // 速さ
+        { s: 'elem', g: 5, sub: '算数', u: '速さ', t: 'I', q: '「速い」とは、「時間が短い」こと？それとも「距離が長い」こと？', tip: '二つの要素の関係性を整理させます。' },
+        { s: 'elem', g: 5, sub: '算数', u: '速さ', t: 'I', q: '時速、分速、秒速。カタツムリの速さを表すならどれが適切ですか？', tip: '適切な単位選択の感覚を養います。' },
+        { s: 'elem', g: 5, sub: '算数', u: '速さ', t: 'E', q: 'もし時間が止まったら、「速さ」という概念はどうなりますか？', tip: '分母が0になる極限の思考実験です。' },
+        { s: 'elem', g: 5, sub: '算数', u: '速さ', t: 'E', q: 'ウサギとカメの競争。もし距離が今の100倍あったら、結果は変わったと思いますか？', tip: '速さと持続力、条件の変化による結果の推測を促します。' },
+
+        // ==========================================
+        // 算数 小6
+        // ==========================================
+        // 対称な図形
+        { s: 'elem', g: 6, sub: '算数', u: '対称な図形', t: 'I', q: '鏡に映したとき、元の形とぴったり重なる図形と、重ならない図形の違いは何でしょう？', tip: '線対称の軸の存在に気づかせます。' },
+        { s: 'elem', g: 6, sub: '算数', u: '対称な図形', t: 'I', q: 'アルファベットの中に、線対称な文字はいくつありますか？（A, H, M...）', tip: '身近な記号の形状分類を行わせます。' },
+        { s: 'elem', g: 6, sub: '算数', u: '対称な図形', t: 'E', q: '点対称な図形を180度回すと重なります。では、90度回して重なる図形はありますか？', tip: '回転対称性への拡張を促します。' },
+        { s: 'elem', g: 6, sub: '算数', u: '対称な図形', t: 'E', q: '自然界（花、雪の結晶、動物）に対称な形が多いのはなぜだと思いますか？', tip: 'バランスや生物学的合理性について考察させます。' },
+
+        // 文字と式
+        { s: 'elem', g: 6, sub: '算数', u: '文字と式', t: 'I', q: 'x（エックス）は魔法の箱です。この箱を使うと、どんな便利なことができますか？', tip: '未知数や変数の有用性を考えさせます。' },
+        { s: 'elem', g: 6, sub: '算数', u: '文字と式', t: 'I', q: 'x + 3 = 10。この式を、言葉の文に直すことはできますか？', tip: '数式の読解力を養います。' },
+        { s: 'elem', g: 6, sub: '算数', u: '文字と式', t: 'E', q: 'x + 2 = 5。この式が「方程式」と呼ばれる理由は何だと思いますか？', tip: '等式の成立条件（解）の意味を問います。' },
+        { s: 'elem', g: 6, sub: '算数', u: '文字と式', t: 'E', q: '中学校に行くと「x」がたくさん出てきます。なぜ数字だけでは足りないのでしょうか？', tip: '一般化や抽象化の必要性を予感させます。' },
+
+        // 分数のかけ算
+        { s: 'elem', g: 6, sub: '算数', u: '分数のかけ算', t: 'I', q: 'かけ算なのに、答えが元の数より小さくなるのはどんな時ですか？', tip: '1より小さい数をかける場合（縮小）の概念を確認します。' },
+        { s: 'elem', g: 6, sub: '算数', u: '分数のかけ算', t: 'I', q: '2/3 dLのペンキで 4/5 ㎡濡れるペンキがあります…この問題、図に描けますか？', tip: '数直線の図解表現力を問います。' },
+        { s: 'elem', g: 6, sub: '算数', u: '分数のかけ算', t: 'E', q: '「逆数をかける」と「わり算をする」が同じになるのはなぜでしょう？', tip: '除法の定義（逆演算）に立ち返ります。' },
+
+        // 分数のわり算
+        { s: 'elem', g: 6, sub: '算数', u: '分数のわり算', t: 'I', q: '「わる数を逆にしてかける」。どうしてひっくり返す必要があるの？', tip: '単位量あたりを求める計算の過程で逆数が出現することを確認します。' },
+        { s: 'elem', g: 6, sub: '算数', u: '分数のわり算', t: 'E', q: '分数÷分数の計算方法を、ひらがなだけで説明することはできますか？', tip: '手順の言語化による定着を図ります。' },
+        { s: 'elem', g: 6, sub: '算数', u: '分数のわり算', t: 'E', q: 'どんな数でも、割ると答えは大きくなりますか？例外はありますか？', tip: '1より大きい数で割る場合との比較を行います。' },
+
+        // 比
+        { s: 'elem', g: 6, sub: '算数', u: '比', t: 'I', q: 'おいしいコーヒー牛乳の「黄金比」を決めるとしたら、何対何にしますか？', tip: '比の実用性を体験させます。' },
+        { s: 'elem', g: 6, sub: '算数', u: '比', t: 'I', q: 'ドレッシングの酢と油の割合。2:3と3:2、味はどう違いますか？', tip: '順序の重要性を認識させます。' },
+        { s: 'elem', g: 6, sub: '算数', u: '比', t: 'E', q: '国旗の縦横の比率が変わってしまったら、それはまだその国の国旗と言えますか？', tip: '相似とアイデンティティの関係を考えます。' },
+        { s: 'elem', g: 6, sub: '算数', u: '比', t: 'E', q: '比の値（a/b）と、わり算の答え。同じものですか？違うものですか？', tip: '比と除法の関係性を整理します。' },
+
+        // 拡大図と縮図
+        { s: 'elem', g: 6, sub: '算数', u: '拡大図と縮図', t: 'I', q: 'この教室の地図を描くとき、縮尺はどれくらいが適切だと思いますか？', tip: '1/100, 1/10などのサイズ感を問います。' },
+        { s: 'elem', g: 6, sub: '算数', u: '拡大図と縮図', t: 'I', q: 'コピー機の「拡大・縮小」ボタン。あれは数学的には何をしていることになりますか？', tip: '相似の中心、比率の概念を確認します。' },
+        { s: 'elem', g: 6, sub: '算数', u: '拡大図と縮図', t: 'E', q: '地図の上で長さを測れば、実際の距離がわかります。でも、測れないもの（山の高さなど）はどうしますか？', tip: '直角三角形の相似を利用した測量への興味を引きます。' },
+
+        // ==========================================
+        // 英語 小3-4 (外国語活動)
+        // ==========================================
+        // 挨拶(Hello)
+        { s: 'elem', g: 3, sub: '英語', u: '挨拶(Hello)', t: 'I', q: '元気がない時の "I\'m fine." と、本当に元気な時の "I\'m fine."。言い方はどう変わりますか？', tip: '非言語コミュニケーションの重要性に気づかせます。' },
+        { s: 'elem', g: 3, sub: '英語', u: '挨拶(Hello)', t: 'I', l: 'S', q: '日本語の「よろしくお願いします」を英語に直すのが難しいのはなぜだと思いますか？', tip: '文化と言語の密接な関係を考えさせます。' },
+        { s: 'elem', g: 3, sub: '英語', u: '挨拶(Hello)', t: 'E', q: '言葉が通じない相手と仲良くなるために、挨拶以外に何ができますか？', tip: 'ジェスチャーや表情の役割を再確認します。' },
+        
+        // 数と色
+        { s: 'elem', g: 3, sub: '英語', u: '数と色', t: 'I', q: 'この教室の中で "Blue" なものを3つ探して指差してください。', tip: '英語を現実世界とリンクさせます。' },
+        { s: 'elem', g: 3, sub: '英語', u: '数と色', t: 'I', q: 'あなたの好きな色を英語で言ってみよう。なぜその色が好きですか？', tip: '英語での自己表現の第一歩です。' },
+        { s: 'elem', g: 3, sub: '英語', u: '数と色', t: 'E', q: 'もし世界から色が消えてしまったら、私たちはどうやって物を区別すればいいですか？英語で表現できますか？(Big, Small etc)', tip: '形容詞の多様性に気づかせます。' },
+        { s: 'elem', g: 3, sub: '英語', u: '数と色', t: 'E', q: '虹の7色、英語で全部言えますか？日本と外国で虹の色の数は違うって知ってた？', tip: '文化による色彩感覚の違いを紹介します。' },
+
+        // 好きなもの(Likes)
+        { s: 'elem', g: 3, sub: '英語', u: '好きなもの(Likes)', t: 'I', q: '"I like dog." と "I like dogs."。聞こえ方はどう違いますか？', tip: '単数形だと「犬肉が好き」と誤解される可能性に触れ、複数の概念を楽しく学びます。' },
+        { s: 'elem', g: 3, sub: '英語', u: '好きなもの(Likes)', t: 'E', q: '嫌いなものを伝えるとき、"I don\'t like..." と言うのと顔をしかめるの、どっちが伝わりますか？', tip: '言語と非言語の補完関係を考えます。' },
+
+        // アルファベット
+        { s: 'elem', g: 3, sub: '英語', u: 'アルファベット', t: 'I', q: 'あなたの名前に隠れているアルファベットを探してみましょう。', tip: '身近な文字への親しみを深めます。' },
+        { s: 'elem', g: 3, sub: '英語', u: 'アルファベット', t: 'E', q: 'アルファベットは全部で26文字。ひらがなより少ないのに、なぜたくさんの言葉が作れるの？', tip: '文字の組み合わせの不思議に触れます。' },
+
+        // 時間(Time)
+        { s: 'elem', g: 4, sub: '英語', u: '時間(Time)', t: 'I', q: '今、地球の裏側は何時でしょう？ "Good morning" かな？ "Good night" かな？', tip: '時差の概念と挨拶の使い分けをリンクさせます。' },
+        { s: 'elem', g: 4, sub: '英語', u: '時間(Time)', t: 'E', q: 'あなたにとっての "Lunch time" は何時ですか？', tip: '自分の生活リズムを英語で表現させます。' },
+
+        // 天気(Weather)
+        { s: 'elem', g: 4, sub: '英語', u: '天気(Weather)', t: 'I', q: 'あなたの心の中は今、どんな天気ですか？ Sunny? Rainy? Cloudy?', tip: '天候表現を感情表現に応用します。' },
+        { s: 'elem', g: 4, sub: '英語', u: '天気(Weather)', t: 'E', q: '雨の日が好きな人はいますか？ "I like rainy days." その理由は？', tip: '多様な価値観の受容を促します。' },
+
+        // 文房具
+        { s: 'elem', g: 4, sub: '英語', u: '文房具', t: 'I', q: 'Do you have a pen? と聞かれて、持っているけど貸したくない時、あなたならどう答えますか？', tip: 'Yes/Noだけでないコミュニケーションの工夫を考えさせます。' },
+        { s: 'elem', g: 4, sub: '英語', u: '文房具', t: 'E', q: '筆箱の中身を英語で紹介してください。一番のお気に入りはどれ？', tip: '愛着のあるものを説明する意欲を引き出します。' },
+
+        // 学校生活
+        { s: 'elem', g: 4, sub: '英語', u: '学校生活', t: 'I', q: '学校にある場所で、一番 "Cool" だと思う場所はどこですか？', tip: '価値観の共有と言語化を促します。' },
+        { s: 'elem', g: 4, sub: '英語', u: '学校生活', t: 'E', q: 'もし校長先生になれるなら、どんな部屋を作りたいですか？ English room? Game room?', tip: '夢を語る楽しさを体験させます。' },
+
+        // ==========================================
+        // 英語 小5-6 (教科)
+        // ==========================================
+        // 誕生日(Birthday)
+        { s: 'elem', g: 5, sub: '英語', u: '誕生日(Birthday)', t: 'I', q: '自分の誕生日に欲しいものを聞かれたとき、"I want a dog." と "I want dogs." では何が違ってしまいますか？', tip: '単数と複数の概念的な違い（ペットか、群れか）を面白がらせます。' },
+        { s: 'elem', g: 5, sub: '英語', u: '誕生日(Birthday)', t: 'E', q: '誕生日は "Happy" な日です。では、毎日が誕生日だったらどう思いますか？', tip: '特別感の意味を考えさせます。' },
+
+        // できること(Can)
+        { s: 'elem', g: 5, sub: '英語', u: 'できること(Can)', t: 'I', q: 'スーパーヒーローじゃなくてもできる、あなたの "Super Power" (得意なこと) は何ですか？', tip: '自己肯定感を高める問いです。' },
+        { s: 'elem', g: 5, sub: '英語', u: 'できること(Can)', t: 'E', q: '"I can..." と "I want to..."。どちらの言葉をたくさん使いたいですか？', tip: '能力と意欲の違いを考えさせます。' },
+
+        // 教科
+        { s: 'elem', g: 5, sub: '英語', u: '教科', t: 'I', q: '一番 "exciting" な教科は何ですか？その理由も英語で言えるかな？', tip: '感情を表す形容詞と教科を結びつけます。' },
+        { s: 'elem', g: 5, sub: '英語', u: '教科', t: 'E', q: '世界中の小学校で、必ずある教科は何だと思いますか？ Math? PE?', tip: '共通の学習内容について想像させます。' },
+
+        // 道案内
+        { s: 'elem', g: 5, sub: '英語', u: '道案内', t: 'I', q: 'Go straight. しか言わずに目的地に着くには、どうやって地図を描けばいいですか？', tip: '制約の中で工夫する思考を促します。' },
+        { s: 'elem', g: 5, sub: '英語', u: '道案内', t: 'E', q: '迷子になった外国の人を助けるとき、英語力と勇気、どっちが大切ですか？', tip: 'コミュニケーションの姿勢を問います。' },
+
+        // 夏休みの思い出
+        { s: 'elem', g: 6, sub: '英語', u: '夏休みの思い出', t: 'I', q: '夏休みの思い出を "One word" (一言) で表すなら何ですか？ Fun? Hot? Busy?', tip: '要約力を試します。' },
+        { s: 'elem', g: 6, sub: '英語', u: '夏休みの思い出', t: 'E', q: '"I went to..." の文を使って、本当の思い出と嘘の思い出を話してください。みんなは見抜けるかな？', tip: 'ゲーム感覚で過去形の定着を図ります。' },
+
+        // 将来の夢
+        { s: 'elem', g: 6, sub: '英語', u: '将来の夢', t: 'I', q: '「パン屋さんになりたい」は "I want to be a baker."。では「パンになりたい」だとどうなりますか？', tip: 'to be の有無による意味の違い（職業 vs 状態）に気づかせます。' },
+        { s: 'elem', g: 6, sub: '英語', u: '将来の夢', t: 'E', q: 'AI翻訳があれば英語の勉強はいらない？ あなたはどう思いますか？', tip: '言語学習の意義をメタ的に考えさせます。' },
+        
+        // 日本の文化
+        { s: 'elem', g: 6, sub: '英語', u: '日本の文化', t: 'I', q: '外国の人に「おにぎり」を説明するとき、"Rice ball" と言うより伝わりやすい方法はありますか？', tip: '文化背景の違いを乗り越える工夫を考えさせます。' },
+        { s: 'elem', g: 6, sub: '英語', u: '日本の文化', t: 'E', q: 'あなたが日本で一番誇りに思う場所やものを英語で紹介してください。', tip: '自国文化への理解と発信力を高めます。' },
+
+        // 小学校の思い出
+        { s: 'elem', g: 6, sub: '英語', u: '小学校の思い出', t: 'I', q: '6年間で一番の "Best Memory" は何ですか？', tip: '最上級表現の実践です。' },
+        { s: 'elem', g: 6, sub: '英語', u: '小学校の思い出', t: 'E', q: '中学校生活への期待と不安。英語で表現するなら？ "Excited"? "Nervous"?', tip: '感情表現の語彙を総動員させます。' },
+
+        // ==========================================
+        // 汎用（フォールバック用）
+        // ==========================================
+        // Intro (導入)
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'I', q: '今日の単元のタイトルを見て、どんなことを学ぶと予想しますか？キーワードを3つ挙げてください。', tip: '見通しを持たせるためのメタ認知発問です。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'I', q: '教科書の挿絵や図を見て、気づいたことを隣の人と話し合ってみましょう。', tip: '非言語情報からの推論を促します。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'I', q: 'この単元は、去年の学習の続きです。何とつながっていると思いますか？', tip: '既習事項の想起を促します。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'I', q: 'もし、この単元を学ばなかったら、大人になった時にどんな困ることがあると思いますか？', tip: '学習の意義（有用性）を考えさせます。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'I', q: 'この単元の「ラスボス（一番難しいところ）」はどこだと思いますか？予想してみましょう。', tip: '学習課題の核心を予感させます。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'I', q: '先生が黒板に書いたこの言葉、知っていますか？どこで聞いたことがありますか？', tip: '生活経験との結びつきを探らせます。' },
+
+        // End (終末)
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日の授業で一番「なるほど！」と思った瞬間はどこですか？', tip: '振り返りの解像度を高めます。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日のキーワードを使って、短文を作ってください。', tip: '用語の理解度を確認します。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日の授業の感想を、ハッシュタグ（#）で3つつけるとしたら？', tip: '要約力を高める楽しい活動です。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日の学習内容を、小学1年生（または家族）に一言で説明するなら、どう言いますか？', tip: '本質的な理解がないと、簡単な言葉には変換できません。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日の授業の内容は、以前習ったどの単元と兄弟だと思いますか？', tip: '知識のネットワーク化（構造化）を促します。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日の授業の続きがあるとしたら、次はどんな問題を解いてみたいですか？', tip: '主体的な学習計画を立てさせます。' },
+        { s: 'any', g: 'any', sub: 'any', u: 'any', t: 'E', q: '今日の学びは、あなたの生活のどこで役に立ちそうですか？', tip: '学習の転移を促します。' }
+    ];
+
+    /**
+     * STATE MANAGEMENT
+     */
+    let state = {
+        school: 'elem', // Fixed to Elementary
+        grade: 1,
+        subject: '算数',
+        unit: '',
+        scene: 'intro' // intro or end
+    };
+    
+    // Track displayed text to prevent immediate repetition
+    let lastDisplayedText = "";
+
+    /**
+     * DOM ELEMENTS
+     */
+    const els = {
+        gradeSelect: document.getElementById('gradeSelect'),
+        subjectSelect: document.getElementById('subjectSelect'),
+        unitSelect: document.getElementById('unitSelect'),
+        resCard: document.getElementById('resultCard'),
+        resBadge: document.getElementById('resBadge'),
+        resText: document.getElementById('resText'),
+        resTip: document.getElementById('resTip'),
+        copyBtn: document.getElementById('copyBtn'),
+        fallbackNotice: document.getElementById('fallbackNotice')
+    };
+
+    /**
+     * INITIALIZATION & EVENTS
+     */
+    function init() {
+        // Event Listeners
+        els.gradeSelect.addEventListener('change', (e) => {
+            state.grade = parseInt(e.target.value);
+            updateSubjects(); // Refresh units
+        });
+
+        els.subjectSelect.addEventListener('change', (e) => {
+            state.subject = e.target.value;
+            updateUnits();
+        });
+
+        els.unitSelect.addEventListener('change', (e) => {
+            state.unit = e.target.value;
+        });
+
+        // Initial render
+        updateGrades();
+    }
+
+    function updateGrades() {
+        const grades = CONFIG[state.school].grades;
+        els.gradeSelect.innerHTML = grades.map(g => 
+            `<option value="${g}">小学${g}年</option>`
+        ).join('');
+        state.grade = grades[0];
+        updateSubjects();
+    }
+
+    function updateSubjects() {
+        const subjects = CONFIG[state.school].subjects;
+        els.subjectSelect.innerHTML = subjects.map(s => 
+            `<option value="${s}">${s}</option>`
+        ).join('');
+        // Prefer Math if available (default setting)
+        state.subject = subjects.includes('算数') ? '算数' : subjects[0];
+        els.subjectSelect.value = state.subject;
+        updateUnits();
+    }
+
+    function updateUnits() {
+        let unitList = [];
+        
+        // Try to find specific units
+        if (UNITS[state.subject] && UNITS[state.subject][state.grade]) {
+            unitList = UNITS[state.subject][state.grade];
+        } else if (UNITS['default']) {
+            unitList = UNITS['default'];
+        }
+
+        els.unitSelect.innerHTML = unitList.map(u => 
+            `<option value="${u}">${u}</option>`
+        ).join('');
+        state.unit = unitList[0];
+    }
+
+    function setScene(scene) {
+        state.scene = scene;
+        document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+        if (scene === 'intro') document.querySelector('.scene-intro').classList.add('active');
+        else document.querySelector('.scene-end').classList.add('active');
+    }
+
+    /**
+     * CORE LOGIC: GENERATION & FALLBACK
+     */
+    function generate() {
+        const sceneChar = state.scene === 'intro' ? 'I' : 'E';
+
+        // 1. Strict Filter
+        let candidates = QUESTION_BANK.filter(q => 
+            q.s === state.school && 
+            q.g === state.grade && 
+            q.sub === state.subject && 
+            q.u.replace(' ★人気', '') === state.unit.replace(' ★人気', '') &&
+            q.t === sceneChar
+        );
+
+        let fallbackLevel = 0;
+
+        // 2. Fallback: Same Grade & Subject, Same Scene (Ignore Unit)
+        if (candidates.length === 0) {
+            candidates = QUESTION_BANK.filter(q => 
+                q.s === state.school && 
+                q.g === state.grade && 
+                q.sub === state.subject &&
+                q.t === sceneChar
+            );
+            fallbackLevel = 1;
+        }
+
+        // 3. Fallback: Common Questions (Any Grade/Subject)
+        if (candidates.length === 0) {
+            candidates = QUESTION_BANK.filter(q => 
+                q.s === 'any' &&
+                q.t === sceneChar
+            );
+            fallbackLevel = 2;
+        }
+
+        if (candidates.length === 0) {
+            renderResult({ q: "条件に合う問題が見つかりませんでした。", tip: "" }, 0);
+            return;
+        }
+
+        // Random Selection with Repetition Check
+        let question;
+        let attempts = 0;
+        
+        // If we have multiple candidates, ensure we don't pick the exact same one as last time
+        if (candidates.length > 1) {
+            do {
+                question = candidates[Math.floor(Math.random() * candidates.length)];
+                attempts++;
+            } while (question.q === lastDisplayedText && attempts < 10); // Increased max attempts
+        } else {
+            question = candidates[0];
+        }
+        
+        lastDisplayedText = question.q;
+        
+        renderResult(question, fallbackLevel);
+    }
+
+    function renderResult(data, fallbackLvl) {
+        const card = els.resCard;
+        
+        // Reset Animation
+        card.classList.remove('visible');
+        
+        setTimeout(() => {
+            // Set Content
+            let badgeText = "ジャンプ問題";
+            
+            // Show explicit matching info
+            if (fallbackLvl === 0) {
+                 // Perfect match
+            } else if (fallbackLvl === 1) {
+                badgeText += " [学年共通]";
+            } else if (fallbackLvl >= 2) {
+                badgeText += " [汎用AI]";
+            }
+
+            els.resBadge.textContent = badgeText;
+            els.resBadge.style.color = 'var(--primary)';
+            
+            els.resText.innerHTML = data.q;
+            
+            if (data.tip) {
+                els.resTip.textContent = "💡 先生へのヒント: " + data.tip;
+                els.resTip.style.display = 'block';
+            } else {
+                els.resTip.style.display = 'none';
+            }
+
+            // Fallback Notice (Clearer now)
+            if (fallbackLvl > 0) {
+                els.fallbackNotice.textContent = "※選択した単元固有の問題がないため、共通または関連する問いを表示しています。";
+                els.fallbackNotice.style.display = "block";
+            } else {
+                els.fallbackNotice.style.display = "none";
+            }
+
+            els.copyBtn.style.display = 'block';
+
+            card.classList.add('visible');
+        }, 100);
+    }
+
+    function copyToClipboard() {
+        const text = els.resText.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast();
+        });
+    }
+
+    function showToast() {
+        const toast = document.getElementById("toast");
+        toast.className = "show";
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    // Start App
+    init();
+
+</script>
+</body>
+</html>

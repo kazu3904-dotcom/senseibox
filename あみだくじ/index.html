@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>あみだくじ</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --border: #e5e7eb;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 1rem;
+    }
+    
+    /* 入力エリアのレイアウト */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1 1 30%; /* スマホで3列or2列になるように */
+      min-width: 80px;
+    }
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4b5563;
+      white-space: nowrap;
+    }
+    input[type="number"] {
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 100%;
+      font-size: 1rem; /* スマホでズームしないサイズ */
+      box-sizing: border-box;
+      -moz-appearance: textfield;
+    }
+    
+    /* 生成・リセットボタンエリア */
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex: 1 1 100%;
+      margin-top: 0.5rem;
+    }
+    
+    /* スピードコントロール周り */
+    .speed-control-area {
+        width: 100%;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f3f4f6;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .speed-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .speed-slider-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        flex: 1 1 200px; /* スマホで幅いっぱい */
+        box-sizing: border-box;
+    }
+    .speed-label {
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: #64748b;
+        white-space: nowrap;
+    }
+    input[type="range"] {
+        cursor: pointer;
+        flex-grow: 1;
+        height: 24px; /* タップしやすく */
+    }
+    .speed-icon {
+        font-size: 1.2rem;
+    }
+
+    /* 実行ボタン群 */
+    .btn-group {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    button {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      touch-action: manipulation; /* タップ遅延防止 */
+    }
+    
+    /* スマホ向けボタンスタイル調整 */
+    #btnGen, #btnReset { flex: 1; }
+    .btn-group button { flex: 1; min-width: 100px; font-size: 0.85rem; }
+
+    button.primary { background: var(--primary); color: white; }
+    button.primary:active { background: var(--primary-hover); transform: translateY(1px); }
+    button.secondary { background: white; border: 1px solid var(--border); color: #374151; }
+    button.secondary:active { background: #f9fafb; }
+    button.accent { background: #8b5cf6; color: white; }
+    button.accent:active { background: #7c3aed; }
+    button.success { background: #10b981; color: white; }
+    button.success:active { background: #059669; }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(100%);
+    }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 900px) {
+      .grid-layout {
+        grid-template-columns: 2.5fr 1fr;
+      }
+      .input-group { flex: 0 1 auto; width: 90px; }
+      .action-buttons { flex: 0 1 auto; margin-top: 0; margin-left: auto; }
+      .speed-slider-container { flex: 0 1 auto; width: auto; }
+      .btn-group { width: auto; }
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      cursor: default;
+      display: block; /* 余白除去 */
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      resize: vertical;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      font-family: inherit;
+      -webkit-appearance: none;
+    }
+    .result-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #1f2937;
+      color: #f3f4f6;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.9rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .mode-label {
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #6b7280;
+        display: block;
+        margin-bottom: 4px;
+    }
+    
+    .tap-hint {
+        font-size: 0.85rem;
+        color: #3b82f6;
+        background: #eff6ff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        display: block;
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>
+    <span>🎌</span> あみだくじアプリ
+    <span class="badge" id="statusBadge">準備完了</span>
+  </h1>
+
+  <div class="card">
+    <div class="controls">
+      <div class="input-group">
+        <label for="numMembers">人数 (2-40)</label>
+        <input type="number" id="numMembers" min="2" max="40" value="5">
+      </div>
+      <div class="input-group">
+        <label for="numPrizes">景品の数</label>
+        <input type="number" id="numPrizes" min="1" max="5" value="2">
+      </div>
+      <div class="input-group">
+        <label for="complexity">横線 (1-10)</label>
+        <input type="number" id="complexity" min="1" max="10" value="5">
+      </div>
+      
+      <div class="action-buttons">
+         <button id="btnGen" class="primary">あみだ生成</button>
+         <button id="btnReset" class="secondary">リセット</button>
+      </div>
+
+      <div class="speed-control-area">
+        <div class="speed-row">
+            <div class="speed-slider-container">
+                <span class="speed-label">速度</span>
+                <span class="speed-icon">🐢</span>
+                <!-- 1:激遅, 2:遅い, 3:普通, 4:速い, 5:爆速 -->
+                <input type="range" id="speedRange" min="1" max="5" step="1" value="3">
+                <span class="speed-icon">🚀</span>
+            </div>
+
+            <div style="flex: 1 1 100%;">
+                <span class="mode-label">結果を見るモード:</span>
+                <div class="btn-group">
+                    <button id="btnRunAll" class="success" disabled>🚀 一斉に</button>
+                    <button id="btnRunSingle" class="accent" disabled>👤 一人ずつ</button>
+                    <button id="btnRunReverse" class="secondary" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;" disabled>🎁 景品から</button>
+                </div>
+            </div>
+        </div>
+        <div class="tap-hint">☝️ 生成後、参加者の名前をタップすると、結果が順番に表示されます（前の線は残ります）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-layout">
+    <div style="min-width: 0;"> 
+      <canvas id="amidaCanvas"></canvas>
+    </div>
+
+    <div class="card" style="height: fit-content;">
+      <h3 style="margin-top:0; font-size:1.1rem; margin-bottom:1rem;">設定 & 結果</h3>
+      
+      <div style="margin-bottom: 1rem;">
+        <label style="display:block; margin-bottom:0.5rem;">上：参加者 (1行に1名)</label>
+        <textarea id="listTop" placeholder="Aさん&#13;&#10;Bさん&#13;&#10;..."></textarea>
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <label style="display:block; margin-bottom:0.5rem;">下：景品・当たり (1行に1つ)</label>
+        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:4px;">※「あみだ生成」時に自動でシャッフル配置されます</div>
+        <textarea id="listBottom" placeholder="当たり&#13;&#10;はずれ&#13;&#10;..."></textarea>
+      </div>
+
+      <div>
+        <label style="display:block; margin-bottom:0.5rem;">抽選結果</label>
+        <div id="resultOutput" class="result-box">まだ抽選していません</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * あみだくじロジック & 描画クラス
+ */
+class AmidaKuji {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    
+    // 設定値
+    this.members = 5;
+    this.density = 5;
+    this.levels = 20; // 縦のステップ数
+    
+    // データ
+    this.links = []; 
+    
+    // アニメーション・表示状態
+    this.isAnimating = false;
+    this.animMode = 'all'; // 'all', 'single', 'reverse', 'tap'
+    this.animProgress = 0; // 0.0 ~ 1.0 (全体または個人の進捗)
+    this.currentMemberIdx = -1; // 現在アニメーション中のインデックス
+    this.paths = []; // {points: [{x,y}...], goalIndex}
+    
+    // 完了した（線が表示され続ける）インデックスの集合
+    this.completedSet = new Set();
+    
+    this.colors = [
+      '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', 
+      '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'
+    ];
+    
+    // クリックイベントのバインド
+    this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+    this.canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
+  }
+
+  // 初期化・生成
+  generate(n, d) {
+    this.members = Math.max(2, Math.min(40, n));
+    this.density = Math.max(1, Math.min(10, d));
+    
+    // 段数調整：人数が増えてもあまり長くならないように
+    this.levels = Math.min(25, Math.max(10, Math.floor(10 + this.members * 0.4)));
+
+    this.links = [];
+    this.resetAnimationState();
+
+    // 横線をランダム生成
+    for (let r = 0; r < this.levels; r++) {
+      const row = [];
+      let prevHasLine = false;
+      for (let c = 0; c < this.members - 1; c++) {
+        // 確率計算
+        const prob = 0.05 + (this.density * 0.05);
+        let hasLine = false;
+        if (!prevHasLine && Math.random() < prob) {
+          hasLine = true;
+        }
+        row.push(hasLine);
+        prevHasLine = hasLine;
+      }
+      this.links.push(row);
+    }
+
+    this.calculatePaths();
+    this.draw();
+  }
+
+  resetAnimationState() {
+    this.isAnimating = false;
+    this.animProgress = 0;
+    this.currentMemberIdx = -1;
+    this.animMode = 'none';
+    this.completedSet.clear(); // 履歴クリア
+  }
+
+  // 全員のルート座標を計算
+  calculatePaths() {
+    this.paths = [];
+    this.updateLayoutMetrics();
+  }
+  
+  updateLayoutMetrics() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = this.canvas.getBoundingClientRect(); 
+    
+    // スマホでは少し余白を詰める
+    const isMobile = rect.width < 600;
+    const padTop = isMobile ? 120 : 140; 
+    const padBottom = isMobile ? 120 : 140;
+    
+    const cssW = rect.width;
+    const rowUnit = Math.max(isMobile ? 15 : 20, 600 / this.levels); 
+    const cssH = padTop + padBottom + (this.levels * rowUnit);
+
+    this.canvas.width = cssW * dpr;
+    this.canvas.height = cssH * dpr;
+    this.ctx.scale(dpr, dpr);
+
+    this.layout = {
+        W: cssW,
+        H: cssH,
+        padX: Math.max(15, cssW * 0.04), // 左右余白
+        padTop,
+        padBottom,
+        colW: (cssW - Math.max(30, cssW * 0.08)) / (this.members - 1),
+        rowH: (cssH - padTop - padBottom) / this.levels
+    };
+
+    // 座標パス生成
+    this.paths = [];
+    for (let startCol = 0; startCol < this.members; startCol++) {
+        let col = startCol;
+        const pts = [];
+        
+        let x = this.layout.padX + col * this.layout.colW;
+        let y = this.layout.padTop;
+        pts.push({x, y});
+
+        for (let r = 0; r < this.levels; r++) {
+            y = this.layout.padTop + (r + 1) * this.layout.rowH;
+            pts.push({x, y});
+
+            if (col < this.members - 1 && this.links[r][col]) {
+                col++;
+                x = this.layout.padX + col * this.layout.colW;
+                pts.push({x, y});
+            } else if (col > 0 && this.links[r][col - 1]) {
+                col--;
+                x = this.layout.padX + col * this.layout.colW;
+                pts.push({x, y});
+            }
+        }
+        // 最後の下への線
+        pts.push({x, y: this.layout.H - this.layout.padBottom + 20});
+
+        this.paths.push({
+            points: pts,
+            goalIndex: col,
+            startIndex: startCol
+        });
+    }
+  }
+
+  // アニメーション開始
+  startAnimation(mode, speedLevel, onComplete) {
+    if (this.isAnimating && this.animMode === 'tap' && mode === 'tap') {
+        if (this.currentMemberIdx !== -1) {
+            this.completedSet.add(this.currentMemberIdx);
+        }
+    }
+
+    if (mode !== 'tap') {
+        this.completedSet.clear();
+    }
+
+    this.isAnimating = false;
+    
+    requestAnimationFrame(() => {
+        this.isAnimating = true;
+        this.animMode = mode;
+        this.animProgress = 0;
+        
+        if (mode === 'single') {
+            this.currentMemberIdx = 0;
+        }
+
+        let speedMultiplier = 1.0;
+        switch(speedLevel) {
+            case 1: speedMultiplier = 0.25; break;
+            case 2: speedMultiplier = 0.5; break;
+            case 3: speedMultiplier = 1.0; break;
+            case 4: speedMultiplier = 2.0; break;
+            case 5: speedMultiplier = 5.0; break;
+            default: speedMultiplier = 1.0;
+        }
+
+        const animateLoop = () => {
+            if (!this.isAnimating) return;
+
+            let baseSpeed = 0.015;
+
+            if (mode === 'all' || mode === 'reverse') {
+                baseSpeed = (0.01 + (1 / this.levels) * 0.5) * speedMultiplier;
+            } else if (mode === 'single') {
+                baseSpeed = 0.04 * speedMultiplier;
+            } else if (mode === 'tap') {
+                baseSpeed = 0.05 * speedMultiplier;
+            }
+
+            this.animProgress += baseSpeed;
+
+            if (this.animProgress >= 1.0) {
+                this.animProgress = 1.0;
+                
+                if (mode === 'single') {
+                    if (this.currentMemberIdx < this.members - 1) {
+                        this.currentMemberIdx++;
+                        this.animProgress = 0;
+                        requestAnimationFrame(animateLoop);
+                        this.draw();
+                        return;
+                    } else {
+                        this.finishAnimation(onComplete);
+                        return;
+                    }
+                } else if (mode === 'tap') {
+                     this.completedSet.add(this.currentMemberIdx);
+                     this.finishAnimation(onComplete);
+                     return;
+                } else {
+                    this.finishAnimation(onComplete);
+                    return;
+                }
+            }
+
+            this.draw();
+            requestAnimationFrame(animateLoop);
+        };
+        
+        animateLoop();
+    });
+  }
+
+  finishAnimation(onComplete) {
+      this.isAnimating = false;
+      this.draw(); 
+      if (onComplete) onComplete();
+  }
+  
+  handleCanvasClick(e) {
+      if (!this.layout) return;
+      
+      const rect = this.canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      const scaleX = this.layout.W / rect.width;
+      const scaleY = this.layout.H / rect.height;
+      const realX = clickX * scaleX;
+      const realY = clickY * scaleY;
+
+      // タップ判定エリア (少し広げる)
+      if (realY > 0 && realY < this.layout.padTop + 40) {
+          let closestCol = -1;
+          let minDist = Infinity;
+          
+          for(let c=0; c<this.members; c++) {
+              const cx = this.layout.padX + c * this.layout.colW;
+              const dist = Math.abs(realX - cx);
+              if (dist < this.layout.colW / 2 + 20) { // マージンを広く
+                  if (dist < minDist) {
+                      minDist = dist;
+                      closestCol = c;
+                  }
+              }
+          }
+          
+          if (closestCol !== -1) {
+              if (this.isAnimating && this.animMode === 'tap' && this.currentMemberIdx === closestCol) return;
+              if (this.completedSet.has(closestCol) && !this.isAnimating) return;
+
+              if (this.animMode !== 'tap' && this.animMode !== 'none') {
+                  this.completedSet.clear();
+              }
+
+              const speed = parseInt(document.getElementById('speedRange').value, 10);
+              this.currentMemberIdx = closestCol;
+              this.startAnimation('tap', speed, () => {
+                  this.updateResultText();
+              });
+              this.updateResultText();
+          }
+      }
+  }
+
+  updateResultText() {
+      const results = this.getResults();
+      const lines = [];
+      
+      this.completedSet.forEach(idx => {
+          const r = results[idx];
+          lines.push(`🎯 ${r.name} → ${r.prize}`);
+      });
+      
+      if (this.isAnimating && this.animMode === 'tap' && this.currentMemberIdx !== -1) {
+          if (!this.completedSet.has(this.currentMemberIdx)) {
+             const r = results[this.currentMemberIdx];
+             lines.push(`⏳ ${r.name} → ???`);
+          }
+      }
+      
+      if (lines.length === 0) {
+          if (this.animMode !== 'tap') {
+          }
+      } else {
+          document.getElementById('resultOutput').textContent = lines.join('\n');
+      }
+  }
+  
+  handleCanvasMouseMove(e) {
+      if (!this.layout) return;
+      const rect = this.canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (this.layout.W / rect.width);
+      const y = (e.clientY - rect.top) * (this.layout.H / rect.height);
+      
+      if (y > 0 && y < this.layout.padTop + 40) {
+          this.canvas.style.cursor = 'pointer';
+      } else {
+          this.canvas.style.cursor = 'default';
+      }
+  }
+
+  drawVerticalText(text, x, y, align = 'top') {
+    const fontSize = 13;
+    this.ctx.font = `${fontSize}px sans-serif`;
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    
+    const chars = text.split('');
+    const lineHeight = fontSize * 1.1;
+    
+    let startY = y;
+    if (align === 'bottom') {
+        startY = y - (chars.length * lineHeight);
+    }
+
+    chars.forEach((char, i) => {
+        const isRotate = ['ー', '-', '(', ')', '（', '）', '「', '」'].includes(char);
+        const charY = startY + (i * lineHeight) + (lineHeight/2);
+        
+        if (isRotate) {
+             this.ctx.save();
+             this.ctx.translate(x, charY);
+             this.ctx.rotate(Math.PI / 2);
+             this.ctx.fillText(char, 0, 0);
+             this.ctx.restore();
+        } else {
+             this.ctx.fillText(char, x, charY);
+        }
+    });
+  }
+
+  draw() {
+    if (!this.layout) return;
+
+    const { W, H, padX, padTop, padBottom, colW, rowH } = this.layout;
+
+    this.ctx.clearRect(0, 0, W, H);
+    
+    this.ctx.strokeStyle = '#e5e7eb';
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+
+    for (let c = 0; c < this.members; c++) {
+      const x = padX + c * colW;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, padTop);
+      this.ctx.lineTo(x, H - padBottom);
+      this.ctx.stroke();
+    }
+    for (let r = 0; r < this.levels; r++) {
+      const y = padTop + (r + 1) * rowH;
+      for (let c = 0; c < this.members - 1; c++) {
+        if (this.links[r][c]) {
+          const x1 = padX + c * colW;
+          const x2 = padX + (c + 1) * colW;
+          this.ctx.beginPath();
+          this.ctx.moveTo(x1, y);
+          this.ctx.lineTo(x2, y);
+          this.ctx.stroke();
+        }
+      }
+    }
+
+    const topLabels = document.getElementById('listTop').value.split('\n');
+    const bottomLabels = document.getElementById('listBottom').value.split('\n');
+
+    this.ctx.fillStyle = '#1f2937';
+    for (let c = 0; c < this.members; c++) {
+      const x = padX + c * colW;
+      const text = topLabels[c] || (c + 1) + "";
+      
+      let isHighlighted = false;
+      if (this.completedSet.has(c)) isHighlighted = true;
+      if (this.isAnimating && this.animMode === 'tap' && c === this.currentMemberIdx) isHighlighted = true;
+      if (this.animMode === 'all' || this.animMode === 'reverse') isHighlighted = true; 
+      if (this.animMode === 'single' && c <= this.currentMemberIdx) isHighlighted = true;
+
+      if (isHighlighted) {
+          this.ctx.fillStyle = this.colors[c % this.colors.length];
+          this.ctx.beginPath();
+          this.ctx.arc(x, padTop, 6, 0, Math.PI*2);
+          this.ctx.fill();
+          this.ctx.fillStyle = '#1f2937'; 
+      } else {
+          this.ctx.fillStyle = '#1f2937';
+          this.ctx.beginPath();
+          this.ctx.arc(x, padTop, 4, 0, Math.PI*2);
+          this.ctx.fill();
+      }
+      this.drawVerticalText(text, x, padTop - 10, 'bottom');
+    }
+
+    this.ctx.fillStyle = '#4b5563';
+    for (let c = 0; c < this.members; c++) {
+      const x = padX + c * colW;
+      const text = bottomLabels[c] || String.fromCharCode(65 + c);
+      
+      if (text.includes("当たり") || text.includes("賞")) {
+          this.ctx.fillStyle = '#dc2626';
+          this.ctx.font = 'bold 13px sans-serif';
+      } else {
+          this.ctx.fillStyle = '#4b5563'; 
+          this.ctx.font = '13px sans-serif';
+      }
+      
+      this.ctx.beginPath();
+      this.ctx.arc(x, H - padBottom, 4, 0, Math.PI*2);
+      this.ctx.fill();
+      this.drawVerticalText(text, x, H - padBottom + 15, 'top');
+    }
+
+    this.ctx.lineWidth = 3;
+    
+    this.paths.forEach((pathObj, idx) => {
+        let progress = 0.0;
+        
+        if (this.completedSet.has(idx)) {
+            progress = 1.0;
+        }
+
+        if (this.isAnimating) {
+            if (this.animMode === 'all') {
+                progress = this.animProgress;
+            } else if (this.animMode === 'single') {
+                if (idx === this.currentMemberIdx) progress = this.animProgress;
+                else if (idx < this.currentMemberIdx) progress = 1.0;
+                else if (!this.completedSet.has(idx)) progress = 0.0;
+            } else if (this.animMode === 'reverse') {
+                progress = this.animProgress;
+            } else if (this.animMode === 'tap') {
+                if (idx === this.currentMemberIdx) progress = this.animProgress;
+            }
+        } else {
+            if ((this.animMode === 'all' || this.animMode === 'single' || this.animMode === 'reverse') && this.animProgress >= 1.0) {
+                 progress = 1.0;
+            }
+        }
+        
+        if (progress <= 0) return;
+
+        this.ctx.strokeStyle = this.colors[idx % this.colors.length];
+        const pts = pathObj.points;
+        const totalPts = pts.length;
+        
+        if (this.animMode === 'reverse' && this.isAnimating) {
+            const drawCountFloat = (totalPts - 1) * progress;
+            const drawIdx = Math.floor(drawCountFloat);
+            const partial = drawCountFloat - drawIdx;
+            
+            if (totalPts > 0) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(pts[totalPts - 1].x, pts[totalPts - 1].y);
+                
+                for (let i = 0; i < drawIdx; i++) {
+                    const pt = pts[totalPts - 1 - (i + 1)];
+                    this.ctx.lineTo(pt.x, pt.y);
+                }
+                if (drawIdx < totalPts - 1) {
+                    const pStart = pts[totalPts - 1 - drawIdx];
+                    const pEnd = pts[totalPts - 1 - (drawIdx + 1)];
+                    const tx = pStart.x + (pEnd.x - pStart.x) * partial;
+                    const ty = pStart.y + (pEnd.y - pStart.y) * partial;
+                    this.ctx.lineTo(tx, ty);
+                }
+                this.ctx.stroke();
+            }
+        } else {
+            const drawCountFloat = (totalPts - 1) * progress;
+            const drawIdx = Math.floor(drawCountFloat);
+            const partial = drawCountFloat - drawIdx;
+
+            if (totalPts > 0) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(pts[0].x, pts[0].y);
+                for (let i = 0; i < drawIdx; i++) {
+                    this.ctx.lineTo(pts[i+1].x, pts[i+1].y);
+                }
+                if (drawIdx < totalPts - 1) {
+                    const p1 = pts[drawIdx];
+                    const p2 = pts[drawIdx+1];
+                    const tx = p1.x + (p2.x - p1.x) * partial;
+                    const ty = p1.y + (p2.y - p1.y) * partial;
+                    this.ctx.lineTo(tx, ty);
+                }
+                this.ctx.stroke();
+            }
+        }
+    });
+  }
+
+  getResults() {
+    const topLabels = document.getElementById('listTop').value.split('\n');
+    const bottomLabels = document.getElementById('listBottom').value.split('\n');
+    
+    return this.paths.map((p, i) => {
+        const name = topLabels[p.startIndex] || (p.startIndex + 1) + "";
+        const prizeIndex = p.goalIndex;
+        const prize = bottomLabels[prizeIndex] || String.fromCharCode(65 + prizeIndex);
+        return { name, prize };
+    });
+  }
+}
+
+// --- メイン処理 ---
+const amida = new AmidaKuji('amidaCanvas');
+const btnGen = document.getElementById('btnGen');
+const btnReset = document.getElementById('btnReset');
+const btnRunAll = document.getElementById('btnRunAll');
+const btnRunSingle = document.getElementById('btnRunSingle');
+const btnRunReverse = document.getElementById('btnRunReverse');
+
+const numInput = document.getElementById('numMembers');
+const prizeInput = document.getElementById('numPrizes'); // 景品数
+const denInput = document.getElementById('complexity');
+const speedRange = document.getElementById('speedRange');
+const statusBadge = document.getElementById('statusBadge');
+const resultOutput = document.getElementById('resultOutput');
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function updateLists(n, prizesCount) {
+  const top = document.getElementById('listTop');
+  const btm = document.getElementById('listBottom');
+  
+  let currentTop = top.value.trim().split('\n');
+  if (top.value === "" || currentTop.every((v, i) => v.match(/^参加者/) || v === "")) {
+     top.value = Array.from({length: n}, (_, i) => `参加者${i + 1}`).join('\n');
+  }
+
+  const prizes = [];
+  for(let i=0; i<prizesCount; i++) {
+      prizes.push(`当たり${i+1}`);
+  }
+  const blanks = Math.max(0, n - prizesCount);
+  for(let i=0; i<blanks; i++) {
+      prizes.push('はずれ');
+  }
+  
+  shuffle(prizes);
+  btm.value = prizes.join('\n');
+}
+
+function setButtonsState(enabled) {
+    btnRunAll.disabled = !enabled;
+    btnRunSingle.disabled = !enabled;
+    btnRunReverse.disabled = !enabled;
+}
+
+function generate() {
+  const n = parseInt(numInput.value, 10);
+  const d = parseInt(denInput.value, 10);
+  const p = parseInt(prizeInput.value, 10);
+  
+  if (p > n) {
+      prizeInput.value = n;
+  }
+  
+  updateLists(n, parseInt(prizeInput.value, 10));
+  amida.generate(n, d);
+  
+  setButtonsState(true);
+  
+  statusBadge.textContent = "生成済み";
+  statusBadge.style.background = "#dbeafe";
+  statusBadge.style.color = "#1e40af";
+  resultOutput.textContent = "タップして結果を見るか、モードを選んでください。";
+}
+
+function run(mode) {
+  setButtonsState(false);
+  
+  const speed = parseInt(speedRange.value, 10);
+  
+  statusBadge.textContent = "抽選中...";
+  statusBadge.style.background = "#fce7f3";
+  statusBadge.style.color = "#9d174d";
+  
+  amida.startAnimation(mode, speed, () => {
+    statusBadge.textContent = "完了";
+    statusBadge.style.background = "#dcfce7";
+    statusBadge.style.color = "#166534";
+    setButtonsState(true);
+    
+    const results = amida.getResults();
+    const text = results.map(r => `🎉 ${r.name} → ${r.prize}`).join('\n');
+    resultOutput.textContent = text;
+  });
+}
+
+function reset() {
+    numInput.value = 5;
+    prizeInput.value = 2; 
+    denInput.value = 5;
+    speedRange.value = 3;
+    document.getElementById('listTop').value = "";
+    document.getElementById('listBottom').value = "";
+    resultOutput.textContent = "まだ抽選していません";
+    generate();
+}
+
+numInput.addEventListener('input', () => {
+    const n = parseInt(numInput.value, 10);
+    prizeInput.max = n;
+    if (parseInt(prizeInput.value) > n) {
+        prizeInput.value = n;
+    }
+});
+
+btnGen.addEventListener('click', generate);
+btnRunAll.addEventListener('click', () => run('all'));
+btnRunSingle.addEventListener('click', () => run('single'));
+btnRunReverse.addEventListener('click', () => run('reverse'));
+btnReset.addEventListener('click', reset);
+
+window.addEventListener('resize', () => {
+    amida.updateLayoutMetrics(); 
+    amida.draw();
+});
+
+generate();
+</script>
+</body>
+</html>

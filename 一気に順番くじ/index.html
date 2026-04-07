@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>一気に順番決定くじ</title>
+  <style>
+    :root { --bg:#0b1121; --card:#101a33; --text:#f8fafc; --muted:#94a3b8; --accent:#3b82f6; }
+    body{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);margin:0;padding:20px}
+    .wrap{max-width:780px;margin:0 auto}
+    h1{font-size:22px;margin:0 0 12px}
+    .card{background:rgba(16,26,51,.8);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    input, textarea{width:100%;background:#0b142b;color:var(--text);border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;padding:10px 12px;font-size:16px;box-sizing:border-box}
+    textarea{min-height:92px;resize:vertical}
+    .btn{border:0;border-radius:12px;padding:10px 14px;font-size:16px;cursor:pointer;transition:opacity 0.2s}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .primary{background:var(--accent);color:white}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--text)}
+    .muted{color:var(--muted);font-size:13px;margin-top:6px}
+    .list{display:flex;gap:12px;margin-top:16px;overflow-x:auto;padding-bottom:8px}
+    .column{display:flex;flex-direction:column;gap:6px;min-width:140px;flex:1}
+    .slot{background:#0b142b;border:1px solid rgba(255,255,255,.10);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:12px;transition:all 0.1s}
+    .rank{font-size:14px;font-weight:bold;color:var(--accent);min-width:36px;text-align:right;}
+    .name{font-size:16px;font-weight:700;word-break:break-all;}
+    .live{outline:2px solid rgba(59,130,246,.6);background:rgba(59,130,246,.1)}
+    .error-text{color:#ef4444;font-weight:bold;}
+    .slot[draggable="true"]{cursor:grab;}
+    .slot[draggable="true"]:active{cursor:grabbing;}
+    .slot.dragging{opacity:0.4;border-color:var(--accent);background:rgba(59,130,246,.05);}
+
+    /* スマホなどの狭い画面向けにさらにコンパクトにする設定 */
+    @media (max-width: 480px) {
+      .wrap { padding: 12px; }
+      .list { gap: 8px; }
+      .column { min-width: 110px; gap: 4px; }
+      .slot { padding: 6px 8px; gap: 8px; border-radius: 6px; }
+      .rank { font-size: 12px; min-width: 28px; }
+      .name { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>一気に順番決定くじ</h1>
+
+  <div class="card">
+    <div class="row">
+      <div style="flex:1;min-width:220px">
+        <label>人数（数字だけでOK）</label>
+        <input id="count" type="number" min="1" max="1000" value="10" />
+        <div class="muted">※名前を入れない場合は「1〜人数」で順番を決めます</div>
+      </div>
+      <div style="flex:1;min-width:260px">
+        <label>名前（1行に1人・任意）</label>
+        <textarea id="names" placeholder="例）&#10;佐藤&#10;田中&#10;鈴木"></textarea>
+        <div class="muted">※人数分より多い名前はカットされます</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button id="start" class="btn primary">スタート</button>
+      <button id="again" class="btn ghost" disabled>もう一回</button>
+      <button id="reset" class="btn ghost">リセット</button>
+      <span id="status" class="muted" style="margin-left:auto"></span>
+    </div>
+
+    <div id="result" class="list"></div>
+  </div>
+</div>
+
+<script>
+  const countEl = document.getElementById('count');
+  const namesEl = document.getElementById('names');
+  const startBtn = document.getElementById('start');
+  const againBtn = document.getElementById('again');
+  const resetBtn = document.getElementById('reset');
+  const statusEl = document.getElementById('status');
+  const resultEl = document.getElementById('result');
+
+  let isRunning = false;
+
+  // localStorage のキー
+  const STORAGE_KEY_NAMES = 'lottery_names';
+  const STORAGE_KEY_COUNT = 'lottery_count';
+
+  // 保存されているデータがあれば復元する
+  const savedNames = localStorage.getItem(STORAGE_KEY_NAMES);
+  if (savedNames !== null) {
+    namesEl.value = savedNames;
+  }
+  const savedCount = localStorage.getItem(STORAGE_KEY_COUNT);
+  if (savedCount !== null) {
+    countEl.value = savedCount;
+  }
+
+  // 入力されるたびに自動保存を行う
+  namesEl.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEY_NAMES, namesEl.value);
+  });
+  countEl.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEY_COUNT, countEl.value);
+  });
+
+  // 配列をランダムにシャッフルする関数
+  function shuffle(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // 抽選対象のリストを取得する関数
+  function getItems() {
+    const count = parseInt(countEl.value, 10);
+    if (isNaN(count) || count < 1) return { error: "人数を正しく入力してください" };
+    
+    // 1000人など極端な数が入力された場合の暴走防止
+    const safeCount = Math.min(count, 1000); 
+
+    const text = namesEl.value.trim();
+    if (text) {
+      // 改行で分割し、空行を除去して配列化
+      let lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s);
+      if (lines.length > 0) {
+        // 名前の数が少ない場合のみエラー
+        if (lines.length < safeCount) {
+          return { error: `名前が足りません（現在${lines.length}人 / ${safeCount}人必要）` };
+        }
+        // 人数分だけ切り取って返す
+        return { items: lines.slice(0, safeCount) };
+      }
+    }
+    
+    // 名前がない場合は人数の数字リストを生成
+    return { items: Array.from({ length: safeCount }, (_, i) => (i + 1).toString()) };
+  }
+
+  // くじ引きのメインアニメーション処理
+  async function runLottery() {
+    if (isRunning) return;
+
+    // エラー表示を初期化
+    statusEl.classList.remove('error-text');
+    statusEl.textContent = '';
+
+    const data = getItems();
+    if (data.error) {
+      statusEl.classList.add('error-text');
+      statusEl.textContent = data.error;
+      return;
+    }
+
+    const items = data.items;
+    if (!items || items.length === 0) {
+      statusEl.classList.add('error-text');
+      statusEl.textContent = "抽選対象がありません。";
+      return;
+    }
+
+    // 実行中のUI制御
+    isRunning = true;
+    startBtn.disabled = true;
+    againBtn.disabled = true;
+    resetBtn.disabled = true;
+    countEl.disabled = true;
+    namesEl.disabled = true;
+    statusEl.textContent = "抽選中...";
+    resultEl.innerHTML = '';
+
+    const shuffled = shuffle(items);
+    const slots = [];
+    const columns = [];
+
+    // まず結果表示用の枠を全て生成
+    shuffled.forEach((resultItem, i) => {
+      // 10個ごとに新しい列を作成
+      if (i % 10 === 0) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'column';
+        resultEl.appendChild(colDiv);
+        columns.push(colDiv);
+      }
+
+      const slotDiv = document.createElement('div');
+      slotDiv.className = 'slot';
+      
+      const rankDiv = document.createElement('div');
+      rankDiv.className = 'rank';
+      rankDiv.textContent = `${i + 1}番`;
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'name';
+      nameDiv.textContent = '???';
+
+      slotDiv.appendChild(rankDiv);
+      slotDiv.appendChild(nameDiv);
+      
+      // 現在の一番新しい列に枠を追加
+      columns[columns.length - 1].appendChild(slotDiv);
+
+      slots.push({
+        el: slotDiv,
+        name: nameDiv,
+        result: resultItem,
+        done: false
+      });
+    });
+
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    const total = slots.length;
+
+    // スロットマシンのように全体をシャッフル回転させる非同期処理
+    let isSpinning = true;
+    const spinAll = async () => {
+      while (isSpinning) {
+        for (let i = 0; i < slots.length; i++) {
+          if (!slots[i].done) {
+            slots[i].name.textContent = items[Math.floor(Math.random() * items.length)];
+          }
+        }
+        await delay(35); // 切り替わり速度
+      }
+    };
+    
+    // 回転開始
+    spinAll();
+
+    // 最初のワクワク感のために少し待つ
+    await delay(400);
+
+    // 1番目から順に結果を確定させていく
+    for (let i = 0; i < slots.length; i++) {
+      slots[i].el.classList.add('live'); // 注目している枠をハイライト
+      
+      // 対象人数が多い場合はサクサク進めるようにウェイト時間を調整
+      const waitTime = total > 50 ? 10 : (total > 20 ? 30 : 80);
+      await delay(waitTime);
+
+      // 確定
+      slots[i].name.textContent = slots[i].result;
+      slots[i].done = true;
+      
+      // 1つ前のハイライトを消す
+      if (i > 0) {
+        slots[i - 1].el.classList.remove('live');
+      }
+    }
+    
+    // スピンループを完全に停止
+    isSpinning = false;
+
+    // 最後の項目のハイライトを少し残してから消去
+    await delay(300);
+    if(slots.length > 0) {
+      slots[slots.length - 1].el.classList.remove('live');
+    }
+
+    // ドラッグ＆ドロップを有効化
+    slots.forEach(slotItem => {
+      slotItem.el.setAttribute('draggable', 'true');
+      slotItem.el.addEventListener('dragstart', function(e) {
+        if(isRunning) return;
+        this.classList.add('dragging');
+        if(e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', ''); // Firefox対応
+        }
+      });
+      slotItem.el.addEventListener('dragend', function() {
+        this.classList.remove('dragging');
+        updateLayout();
+      });
+    });
+
+    // 終了処理とUIの復元
+    isRunning = false;
+    startBtn.disabled = false;
+    againBtn.disabled = false; // 「もう一回」を有効化
+    resetBtn.disabled = false;
+    countEl.disabled = false;
+    namesEl.disabled = false;
+    statusEl.classList.remove('error-text');
+    statusEl.textContent = "完了！ドラッグで入れ替え可能です";
+  }
+
+  // 入力内容と結果をすべてリセットする処理
+  function resetAll() {
+    if (isRunning) return;
+    namesEl.value = '';
+    resultEl.innerHTML = '';
+    statusEl.textContent = '';
+    statusEl.classList.remove('error-text');
+    againBtn.disabled = true;
+
+    // 名前データは初期化しますが、人数の記憶はそのまま残します
+    localStorage.removeItem(STORAGE_KEY_NAMES);
+  }
+
+  // ボタンにクリックイベントを紐付け
+  startBtn.addEventListener('click', runLottery);
+  againBtn.addEventListener('click', runLottery);
+  resetBtn.addEventListener('click', resetAll);
+
+  // --- ドラッグ＆ドロップ関連の処理 ---
+
+  // ドラッグ完了後に列の配分と順位テキストを整える関数
+  function updateLayout() {
+    const allSlots = Array.from(document.querySelectorAll('.slot'));
+    const columns = Array.from(document.querySelectorAll('.column'));
+    
+    let colIndex = 0;
+    allSlots.forEach((slot, index) => {
+      // 順位表示を現在の並びに合わせて更新
+      const rankEl = slot.querySelector('.rank');
+      if (rankEl) rankEl.textContent = `${index + 1}番`;
+      
+      // 10個単位で元の列構成に再配置
+      if (index > 0 && index % 10 === 0) {
+        colIndex++;
+      }
+      
+      if (columns[colIndex]) {
+        columns[colIndex].appendChild(slot);
+      }
+    });
+  }
+
+  // ドラッグ中の要素の移動（並び替え）処理
+  resultEl.addEventListener('dragover', e => {
+    e.preventDefault(); // ドロップを許可
+    const dragging = document.querySelector('.dragging');
+    if (!dragging) return;
+    
+    // カーソル位置にあるスロットを取得
+    const targetSlot = e.target.closest('.slot');
+    if (targetSlot && targetSlot !== dragging) {
+      const rect = targetSlot.getBoundingClientRect();
+      // スロットの上下半分のどちらにカーソルがあるかで、前に入れるか後ろに入れるかを判定
+      const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+      targetSlot.parentNode.insertBefore(dragging, next ? targetSlot.nextSibling : targetSlot);
+    }
+  });
+</script>
+</body>
+</html>

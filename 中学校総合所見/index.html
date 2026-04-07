@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>総合的な学習の時間 所見作成ツール（中学校用）</title>
+    <!-- デザインを整えるためのライブラリ（インターネット接続が必要です） -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f3f4f6; }
+        .input-group { margin-bottom: 1.5rem; }
+        .result-box { transition: all 0.3s ease; }
+        .result-box:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    </style>
+</head>
+<body class="p-6 md:p-10 text-slate-700">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-slate-800 p-6 text-white">
+            <h1 class="text-2xl font-bold mb-2">総合的な学習の時間 所見作成ツール（中学校用）</h1>
+            <p class="text-slate-300 text-sm">中学校の指導要録・通知表に対応。探究学習、キャリア教育、SDGs等の活動評価文を生成します。</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
+            <!-- Left Column: Inputs -->
+            <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    入力項目
+                </h2>
+
+                <!-- Input: Buntai -->
+                <div class="input-group">
+                    <label class="block text-sm font-bold mb-2 text-slate-700">文体・用途</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="buntai" value="keitai" checked class="form-radio text-blue-600 h-4 w-4">
+                            <span class="ml-2">通知表 (敬体)</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="buntai" value="joutai" class="form-radio text-blue-600 h-4 w-4">
+                            <span class="ml-2">指導要録 (常体)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Input: Kanten -->
+                <div class="input-group">
+                    <label class="block text-sm font-bold mb-2 text-slate-700">観点 (軸)</label>
+                    <select id="perspective" class="w-full p-2 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="career">進路・生き方 (自己理解・職業観・将来設計)</option>
+                        <option value="international">国際理解 (多文化共生・SDGs・平和)</option>
+                        <option value="information">情報 (メディアリテラシー・発信・分析)</option>
+                        <option value="environment">環境 (持続可能性・地域環境・グローバル)</option>
+                        <option value="welfare">福祉・共生 (人権・ユニバーサルデザイン・共助)</option>
+                    </select>
+                </div>
+
+                <!-- Input: Length -->
+                <div class="input-group">
+                    <label class="block text-sm font-bold mb-2 text-slate-700">文字数目安</label>
+                    <select id="length" class="w-full p-2 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="short">80 〜 100字</option>
+                        <option value="medium" selected>100 〜 150字</option>
+                        <option value="long">150 〜 200字</option>
+                    </select>
+                </div>
+
+                <!-- Input: Action (Select) -->
+                <div class="input-group">
+                    <label class="block text-sm font-bold mb-2 text-slate-700">学習行動</label>
+                    <select id="action" class="w-full p-2 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <!-- JavaScriptで自動生成 -->
+                    </select>
+                </div>
+
+                <!-- Input: Characteristic (Select) -->
+                <div class="input-group">
+                    <label class="block text-sm font-bold mb-2 text-slate-700">生徒の特徴・資質</label>
+                    <select id="characteristic" class="w-full p-2 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <!-- JavaScriptで自動生成 -->
+                    </select>
+                </div>
+
+                <button onclick="generateComments()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-200 mt-4 shadow-md">
+                    所見を作成する
+                </button>
+            </div>
+
+            <!-- Right Column: Outputs -->
+            <div class="flex flex-col gap-4">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    生成結果
+                </h2>
+                
+                <!-- Draft A -->
+                <div class="result-box bg-white border border-blue-100 rounded-lg p-4 shadow-sm relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-bold text-blue-800 bg-blue-100 px-2 py-1 rounded">A案：意欲・成長強調</span>
+                        <span id="count-a" class="text-xs text-gray-400">0字</span>
+                    </div>
+                    <p id="text-a" class="text-sm leading-relaxed text-gray-700 mb-2 min-h-[4rem]">ここに生成結果が表示されます。</p>
+                    <button onclick="copyToClipboard('text-a')" class="absolute bottom-2 right-2 text-xs text-blue-500 hover:text-blue-700">コピー</button>
+                </div>
+
+                <!-- Draft B -->
+                <div class="result-box bg-white border border-green-100 rounded-lg p-4 shadow-sm relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-bold text-green-800 bg-green-100 px-2 py-1 rounded">B案：事実・考察バランス</span>
+                        <span id="count-b" class="text-xs text-gray-400">0字</span>
+                    </div>
+                    <p id="text-b" class="text-sm leading-relaxed text-gray-700 mb-2 min-h-[4rem]">ここに生成結果が表示されます。</p>
+                    <button onclick="copyToClipboard('text-b')" class="absolute bottom-2 right-2 text-xs text-green-500 hover:text-green-700">コピー</button>
+                </div>
+
+                <!-- Draft C -->
+                <div class="result-box bg-white border border-purple-100 rounded-lg p-4 shadow-sm relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-bold text-purple-800 bg-purple-100 px-2 py-1 rounded">C案：端的・論理的</span>
+                        <span id="count-c" class="text-xs text-gray-400">0字</span>
+                    </div>
+                    <p id="text-c" class="text-sm leading-relaxed text-gray-700 mb-2 min-h-[4rem]">ここに生成結果が表示されます。</p>
+                    <button onclick="copyToClipboard('text-c')" class="absolute bottom-2 right-2 text-xs text-purple-500 hover:text-purple-700">コピー</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 設定データ（中学校用） ---
+        
+        // 観点データ
+        const perspectives = {
+            career: {
+                theme: "進路・生き方",
+                keywords: ["自己理解", "勤労観・職業観", "将来設計", "自己実現"],
+                contexts: ["職場体験学習", "上級学校調べ", "自己の適性理解"],
+                goals: ["自らの進路を主体的に選択すること", "社会における自己の役割を考えること", "望ましい勤労観を育むこと"]
+            },
+            international: {
+                theme: "国際理解",
+                keywords: ["多文化共生", "SDGs", "相互理解", "地球規模の課題"],
+                contexts: ["SDGsに関する探究学習", "異文化交流や国際情勢の調査", "グローバル社会における日本の役割"],
+                goals: ["広い視野を持って行動すること", "多様な価値観を尊重すること", "持続可能な社会の実現に寄与すること"]
+            },
+            information: {
+                theme: "情報",
+                keywords: ["メディアリテラシー", "情報の取捨選択", "効果的な発信", "情報モラル"],
+                contexts: ["データの収集・分析", "ICTを活用したプレゼンテーション", "情報社会における課題の考察"],
+                goals: ["情報を多角的に分析すること", "目的に応じて適切に表現すること", "情報社会に主体的に参画すること"]
+            },
+            environment: {
+                theme: "環境",
+                keywords: ["持続可能性", "循環型社会", "地域課題", "環境倫理"],
+                contexts: ["地域の環境保全活動", "エネルギー問題の調査・研究", "持続可能なライフスタイルの提案"],
+                goals: ["身近な事象をグローバルな視点で捉えること", "環境保全に向けた実践力を高めること", "課題解決に向け協働すること"]
+            },
+            welfare: {
+                theme: "福祉・共生",
+                keywords: ["共生社会", "人権尊重", "ユニバーサルデザイン", "社会参画"],
+                contexts: ["福祉体験学習", "共生社会に向けた地域調査", "人権課題への取り組み"],
+                goals: ["他者の痛みに共感すること", "誰もが暮らしやすい社会を構想すること", "社会の一員としての自覚を持つこと"]
+            }
+        };
+
+        // 生徒の特徴（中学生向けに語彙を調整）
+        const characteristicData = {
+            logical: { label: "論理的 (筋道立てて考える)", attributive: "論理的な", adverbial: "論理的に", noun: "論理的思考力" },
+            autonomous: { label: "自律的・主体的 (自ら動く)", attributive: "自律的な", adverbial: "主体的に", noun: "主体性" },
+            multifaceted: { label: "多角的 (広い視点)", attributive: "多面的な", adverbial: "多角的な視点で", noun: "多面的な視野" },
+            collaborative: { label: "協働的 (合意形成を図る)", attributive: "協調性のある", adverbial: "周囲と協働して", noun: "協調性" },
+            persistent: { label: "粘り強い (探究心がある)", attributive: "粘り強い", adverbial: "根気強く", noun: "探究心" },
+            flexible: { label: "柔軟 (状況に対応)", attributive: "柔軟な", adverbial: "柔軟に", noun: "柔軟な発想力" },
+            sincere: { label: "誠実 (真摯に取り組む)", attributive: "誠実な", adverbial: "真摯に", noun: "誠実さ" },
+            leadership: { label: "リーダーシップ (統率・調整)", attributive: "リーダーシップのある", adverbial: "リーダーシップを発揮し", noun: "リーダーシップ" }
+        };
+
+        // 学習行動（中学生向け活動）
+        const actionData = {
+            workplace: { 
+                label: "職場体験・進路探究", 
+                pastA: "職場体験等の進路学習を行いました", pastAShort: "行った",
+                progB: "自己の将来を見据えた進路探究に取り組んでいます", progBShort: "取り組んでいる",
+                noun: "進路学習" 
+            },
+            inquiry: { 
+                label: "課題探究 (仮説・検証)", 
+                pastA: "仮説に基づいた課題の検証を行いました", pastAShort: "行った",
+                progB: "自ら設定した課題の解決に取り組んでいます", progBShort: "取り組んでいる",
+                noun: "探究活動" 
+            },
+            fieldwork: { 
+                label: "フィールドワーク・取材", 
+                pastA: "現地調査や専門家への取材を行いました", pastAShort: "行った",
+                progB: "実社会でのフィールドワークに取り組んでいます", progBShort: "取り組んでいる",
+                noun: "フィールドワーク" 
+            },
+            analysis: { 
+                label: "調査・分析 (文献・データ)", 
+                pastA: "文献やデータの収集・分析を行いました", pastAShort: "行った",
+                progB: "客観的な根拠に基づく分析に取り組んでいます", progBShort: "取り組んでいる",
+                noun: "調査・分析活動" 
+            },
+            presentation: { 
+                label: "発表・提案 (ICT活用)", 
+                pastA: "スライド等を用いたプレゼンテーションを行いました", pastAShort: "行った",
+                progB: "ICTを活用した効果的な発表に取り組んでいます", progBShort: "取り組んでいる",
+                noun: "プレゼンテーション" 
+            },
+            discussion: { 
+                label: "討議・合意形成", 
+                pastA: "グループ討議を通して合意形成を図りました", pastAShort: "図った",
+                progB: "対話を通じた合意形成に取り組んでいます", progBShort: "取り組んでいる",
+                noun: "グループ討議"
+            },
+            contribution: { 
+                label: "社会貢献・ボランティア", 
+                pastA: "地域社会への貢献活動に参加しました", pastAShort: "参加した",
+                progB: "地域の一員としての活動に取り組んでいます", progBShort: "取り組んでいる",
+                noun: "社会貢献活動"
+            }
+        };
+
+        // --- 初期化処理 ---
+        function initSelects() {
+            const charSelect = document.getElementById('characteristic');
+            const actionSelect = document.getElementById('action');
+
+            // 特徴の選択肢生成
+            for (const [key, val] of Object.entries(characteristicData)) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.innerText = val.label;
+                charSelect.appendChild(opt);
+            }
+
+            // 学習行動の選択肢生成
+            for (const [key, val] of Object.entries(actionData)) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.innerText = val.label;
+                actionSelect.appendChild(opt);
+            }
+        }
+        
+        // 読み込み時に実行
+        initSelects();
+
+        // --- 文章生成ロジック ---
+        function generateComments() {
+            const buntai = document.querySelector('input[name="buntai"]:checked').value;
+            const lengthMode = document.getElementById('length').value;
+            const perspectiveKey = document.getElementById('perspective').value;
+            
+            const actionKey = document.getElementById('action').value;
+            const charKey = document.getElementById('characteristic').value;
+            
+            const actionObj = actionData[actionKey];
+            const charObj = characteristicData[charKey];
+            const pData = perspectives[perspectiveKey];
+            const isKeitai = buntai === 'keitai';
+
+            const draftA = buildDraftA(isKeitai, lengthMode, pData, actionObj, charObj);
+            const draftB = buildDraftB(isKeitai, lengthMode, pData, actionObj, charObj);
+            const draftC = buildDraftC(isKeitai, lengthMode, pData, actionObj, charObj);
+
+            document.getElementById('text-a').innerText = draftA;
+            document.getElementById('count-a').innerText = draftA.length + "字";
+            document.getElementById('text-b').innerText = draftB;
+            document.getElementById('count-b').innerText = draftB.length + "字";
+            document.getElementById('text-c').innerText = draftC;
+            document.getElementById('count-c').innerText = draftC.length + "字";
+        }
+
+        // A案：意欲・成長強調
+        function buildDraftA(isKeitai, lengthMode, pData, action, char) {
+            const endState = isKeitai ? "姿が見られました。" : "姿が見られた。";
+            const endFuture = isKeitai ? "期待しています。" : "期待される。";
+            let actionPhrase = isKeitai ? action.pastA : action.pastAShort;
+
+            let text = "";
+            // 中学生らしく少し落ち着いた書き出し
+            text += `${pData.theme}の学習において、${char.attributive}態度で${actionPhrase}。`;
+
+            if (lengthMode === 'short') {
+                text += `${pData.keywords[0]}や${pData.keywords[1]}についての理解を深め、主体的に考察する${endState}`;
+            } else {
+                text += `${pData.contexts[0]}を通して、${pData.keywords[1]}の重要性を認識し、自己の考えを深める${endState}`;
+                if (lengthMode === 'long') {
+                    const feel = isKeitai ? "感じられました。" : "感じられた。";
+                    text += `学んだことを社会生活と関連付け、${pData.keywords[2]}しようとする意識の高まりも${feel}`;
+                }
+            }
+
+            if (lengthMode !== 'long') {
+                text += `今後は、${pData.goals[0]}を${endFuture}`;
+            } else {
+                text += `今後は、さらに${pData.goals[0]}を${endFuture}`;
+            }
+            return text;
+        }
+
+        // B案：事実・考察バランス
+        function buildDraftB(isKeitai, lengthMode, pData, action, char) {
+            let actionPhrase = isKeitai ? action.progB : action.progBShort;
+            const endBetter = isKeitai ? "期待しています。" : "期待される。";
+            const endGood = isKeitai ? "評価できます。" : "評価できる。"; // "立派" -> "評価できる"
+
+            let text = "";
+            text += `${pData.contexts[1]}において、${char.adverbial}、${actionPhrase}。`;
+            text += `${pData.keywords[1]}に着目し、${pData.keywords[2]}する力が${isKeitai ? "身に付いてきました。" : "身に付いてきた。"}`;
+
+            if (lengthMode === 'medium' || lengthMode === 'long') {
+                text += `特に、${pData.keywords[3]}を意識しながら探究を深めた点は${endGood}`;
+            }
+
+            text += `今後は、${pData.goals[1]}とともに、${pData.goals[2]}ことを${endBetter}`;
+            return text;
+        }
+
+        // C案：端的・論理的
+        function buildDraftC(isKeitai, lengthMode, pData, action, char) {
+            const endState = isKeitai ? "います。" : "いる。";
+            const endHope = isKeitai ? "望まれます。" : "望まれる。"; // "よいでしょう" -> "望まれる"
+            let actionPast = isKeitai ? action.pastA : action.pastAShort;
+
+            let text = "";
+            text += `${pData.theme}の学習では、${char.noun}を生かして${actionPast}。`;
+
+            if (lengthMode !== 'short') {
+                 const thought = isKeitai ? "考察しました。" : "考察した。";
+                 text += `${pData.keywords[0]}を深く理解し、${pData.keywords[2]}へと${thought}`;
+            }
+
+            text += `今後は、${pData.goals[0]}と${endHope}`;
+
+            if (lengthMode === 'long') {
+                 const doAction = isKeitai ? action.pastA : action.pastAShort;
+                 const high = isKeitai ? "高まっています。" : "高まっている。";
+                 const exp = isKeitai ? "期待されます。" : "期待される。";
+                 text = `${pData.theme}の単元において、${char.noun}を発揮して${doAction}。情報を適切に${pData.keywords[1]}し、${pData.keywords[3]}する力が${high}今後は、得られた知見を広げ、${pData.goals[1]}ことが${exp}`;
+            }
+            return text;
+        }
+
+        // クリップボードコピー
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("コピーしました");
+            }).catch(err => {
+                console.error('コピーに失敗しました', err);
+            });
+        }
+    </script>
+</body>
+</html>

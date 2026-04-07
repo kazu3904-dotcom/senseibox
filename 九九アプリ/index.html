@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九九マスター：たのしくがくしゅう！</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #f0fdf4;
+            touch-action: manipulation;
+        }
+        .pop-in {
+            animation: pop-in 0.3s cubic-bezier(0.26, 0.53, 0.74, 1.48);
+        }
+        @keyframes pop-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .correct-anim {
+            animation: bounce 0.5s ease infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        .timer-low {
+            color: #ef4444;
+            animation: shake 0.5s infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="game-container" class="bg-white rounded-3xl shadow-xl p-6 w-full max-w-md border-4 border-green-400 relative overflow-hidden">
+        
+        <!-- Main Menu -->
+        <div id="menu-screen">
+            <h1 class="text-3xl font-bold text-center text-green-600 mb-6">🧮 九九マスター</h1>
+            
+            <!-- モード選択 -->
+            <div class="mb-6 flex justify-center gap-4 bg-gray-100 p-2 rounded-2xl">
+                <button id="mode-normal-btn" onclick="selectMode('normal')" class="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-green-500 shadow-md transition-all">ふつうモード</button>
+                <button id="mode-timed-btn" onclick="selectMode('timed')" class="flex-1 py-3 px-4 rounded-xl font-bold text-gray-500 hover:bg-white hover:shadow transition-all cursor-pointer">⏱️1ぷんチャレンジ</button>
+            </div>
+
+            <div class="mb-8">
+                <p class="text-center text-gray-600 mb-4 font-bold">れんしゅうしたい「だん」をえらんでね！</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="startGame(1)" class="bg-red-100 hover:bg-red-200 text-red-600 font-bold py-4 rounded-2xl border-b-4 border-red-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">1のだん</button>
+                    <button onclick="startGame(2)" class="bg-orange-100 hover:bg-orange-200 text-orange-600 font-bold py-4 rounded-2xl border-b-4 border-orange-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">2のだん</button>
+                    <button onclick="startGame(3)" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 font-bold py-4 rounded-2xl border-b-4 border-yellow-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">3のだん</button>
+                    <button onclick="startGame(4)" class="bg-green-100 hover:bg-green-200 text-green-600 font-bold py-4 rounded-2xl border-b-4 border-green-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">4のだん</button>
+                    <button onclick="startGame(5)" class="bg-blue-100 hover:bg-blue-200 text-blue-600 font-bold py-4 rounded-2xl border-b-4 border-blue-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">5のだん</button>
+                    <button onclick="startGame(6)" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-600 font-bold py-4 rounded-2xl border-b-4 border-indigo-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">6のだん</button>
+                    <button onclick="startGame(7)" class="bg-purple-100 hover:bg-purple-200 text-purple-600 font-bold py-4 rounded-2xl border-b-4 border-purple-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">7のだん</button>
+                    <button onclick="startGame(8)" class="bg-pink-100 hover:bg-pink-200 text-pink-600 font-bold py-4 rounded-2xl border-b-4 border-pink-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">8のだん</button>
+                    <button onclick="startGame(9)" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-2xl border-b-4 border-gray-300 transition-all text-2xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">9のだん</button>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="startGame('random')" class="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold py-4 rounded-2xl border-b-4 border-orange-700 transition-all text-xl shadow-lg active:transform active:translate-y-1 active:border-b-0 cursor-pointer">🔥 ぜんぶまぜまぜ</button>
+            </div>
+        </div>
+
+        <!-- Ready Screen (Timed Mode Only) -->
+        <div id="ready-screen" class="hidden text-center pop-in">
+            <h2 class="text-3xl font-bold text-blue-600 mb-6 flex items-center justify-center gap-2">
+                <span>⏱️</span> 1ぷんチャレンジ
+            </h2>
+            <div class="bg-blue-50 rounded-2xl p-6 mb-8 border-2 border-blue-100">
+                <p class="text-xl text-gray-700 mb-2 font-bold">じゅんびは いいかな？</p>
+                <p class="text-gray-500 font-bold">1ぷんかんで なんもん<br>とけるか チャレンジだよ！</p>
+            </div>
+            
+            <button onclick="startTimedNow()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-6 rounded-2xl border-b-4 border-blue-700 text-3xl shadow-lg active:transform active:translate-y-1 active:border-b-0 transition-all mb-6 cursor-pointer">スタート！</button>
+            
+            <button onclick="showMenu()" class="text-gray-400 font-bold hover:text-gray-600 flex items-center justify-center gap-1 mx-auto py-2 cursor-pointer">
+                <span>🏠</span> メニューにもどる
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="confirmExit()" class="bg-gray-100 px-4 py-2 rounded-xl text-gray-600 font-bold hover:bg-gray-200 transition-colors flex items-center gap-1 cursor-pointer">
+                    <span>🏠</span>
+                    <span>もどる</span>
+                </button>
+                <div id="mode-info" class="text-lg font-bold text-green-600">
+                    <span id="progress-container"><span id="current-q">1</span> / 9</span>
+                    <span id="timer-container" class="hidden text-xl">⏳ <span id="timer">60</span></span>
+                </div>
+                <div class="text-lg font-bold text-yellow-500 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
+                    ⭐️ <span id="score">0</span>
+                </div>
+            </div>
+
+            <div class="bg-green-50 rounded-2xl p-8 mb-6 text-center border-2 border-green-200 shadow-inner">
+                <div id="question" class="text-6xl font-bold text-gray-800 tracking-widest">2 × 3 = ?</div>
+                <div id="answer-display" class="text-5xl font-bold text-blue-600 mt-4 h-12 flex items-center justify-center">
+                    <span class="inline-block border-b-4 border-blue-400 min-w-[1.5rem] leading-tight">?</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="pressKey(1)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">1</button>
+                <button onclick="pressKey(2)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">2</button>
+                <button onclick="pressKey(3)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">3</button>
+                <button onclick="pressKey(4)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">4</button>
+                <button onclick="pressKey(5)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">5</button>
+                <button onclick="pressKey(6)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">6</button>
+                <button onclick="pressKey(7)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">7</button>
+                <button onclick="pressKey(8)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">8</button>
+                <button onclick="pressKey(9)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">9</button>
+                <button onclick="clearAnswer()" class="bg-red-50 hover:bg-red-100 text-red-500 font-bold py-4 rounded-xl border-2 border-red-200 text-xl shadow-sm transition-all cursor-pointer">けす</button>
+                <button onclick="pressKey(0)" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-xl border-2 border-gray-200 text-2xl active:bg-gray-200 shadow-sm transition-all cursor-pointer">0</button>
+                <button onclick="checkAnswer()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl border-b-4 border-green-700 text-xl active:transform active:translate-y-1 active:border-b-0 shadow-md cursor-pointer">OK!</button>
+            </div>
+            
+            <div id="feedback" class="mt-4 text-center h-8 font-bold text-xl"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden text-center pop-in h-[85vh] sm:h-[600px]">
+            <div class="flex flex-col h-full overflow-hidden">
+                <div class="flex-shrink-0">
+                    <h2 id="result-title" class="text-3xl font-bold text-gray-800 mb-4">おつかれさま！</h2>
+                    <div id="medal-container" class="text-8xl mb-4">🏅</div>
+                    <p class="text-2xl font-bold text-green-600 mb-2"><span id="final-score">0</span></p>
+                    <p id="comment" class="text-gray-600 mb-4 font-bold text-lg px-4">すごい！がんばったね！</p>
+                </div>
+                
+                <!-- Mistakes Section for Timed Mode -->
+                <div id="mistakes-section" style="display: none;" class="text-left bg-red-50 rounded-2xl p-4 mb-4 border border-red-200 flex-1 min-h-[120px] overflow-hidden flex-col">
+                    <p class="font-bold text-red-600 mb-2 text-center text-sm md:text-base">💡 まちがえた もんだい</p>
+                    <ul id="mistakes-list" class="text-gray-700 font-bold space-y-2 overflow-y-auto flex-1 text-center text-base md:text-lg pb-2 custom-scrollbar"></ul>
+                </div>
+
+                <div class="space-y-3 mt-auto flex-shrink-0">
+                    <button onclick="restartGame()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl border-b-4 border-green-700 transition-all text-xl shadow-lg active:transform active:translate-y-1 active:border-b-0 cursor-pointer">もういちど あそぶ</button>
+                    <button onclick="showMenu()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-2xl border-b-4 border-gray-300 transition-all text-xl active:transform active:translate-y-1 active:border-b-0 cursor-pointer">🏠 メニューへもどる</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Modal -->
+        <div id="confirm-modal" class="hidden absolute inset-0 bg-black/50 flex items-center justify-center p-6 z-40 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-8 w-full shadow-2xl text-center border-4 border-yellow-400 pop-in">
+                <p class="text-2xl font-bold text-gray-800 mb-6">やめて メニューへ<br>もどる？</p>
+                <div class="flex gap-4">
+                    <button onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-2xl border-b-4 border-gray-300 text-xl cursor-pointer">つづける</button>
+                    <button onclick="showMenu()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-2xl border-b-4 border-red-700 text-xl cursor-pointer">もどる</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Celebration Overlay -->
+    <div id="overlay" class="fixed inset-0 pointer-events-none flex items-center justify-center hidden z-50">
+        <div id="overlay-content" class="text-9xl">✨</div>
+    </div>
+
+    <script>
+        let gameMode = 'normal'; // 'normal' or 'timed'
+        let currentDan = 1;
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let currentInput = "";
+        let timeLeft = 60;
+        let timerInterval = null;
+        let selectedModeMenu = 'normal';
+        let mistakes = [];
+
+        const menuScreen = document.getElementById('menu-screen');
+        const readyScreen = document.getElementById('ready-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const confirmModal = document.getElementById('confirm-modal');
+        const questionEl = document.getElementById('question');
+        const answerDisplay = document.getElementById('answer-display');
+        const currentQEl = document.getElementById('current-q');
+        const progressContainer = document.getElementById('progress-container');
+        const timerContainer = document.getElementById('timer-container');
+        const timerEl = document.getElementById('timer');
+        const scoreEl = document.getElementById('score');
+        const feedbackEl = document.getElementById('feedback');
+        const finalScoreEl = document.getElementById('final-score');
+        const medalContainer = document.getElementById('medal-container');
+        const commentEl = document.getElementById('comment');
+        const resultTitle = document.getElementById('result-title');
+        const overlay = document.getElementById('overlay');
+        const overlayContent = document.getElementById('overlay-content');
+
+        function selectMode(mode) {
+            selectedModeMenu = mode;
+            const normalBtn = document.getElementById('mode-normal-btn');
+            const timedBtn = document.getElementById('mode-timed-btn');
+            if (mode === 'normal') {
+                normalBtn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-white bg-green-500 shadow-md transition-all";
+                timedBtn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-gray-500 hover:bg-white hover:shadow transition-all cursor-pointer";
+            } else {
+                timedBtn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-white bg-blue-500 shadow-md transition-all";
+                normalBtn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-gray-500 hover:bg-white hover:shadow transition-all cursor-pointer";
+            }
+        }
+
+        function startGame(dan) {
+            gameMode = selectedModeMenu;
+            currentDan = dan;
+            
+            // 全ての画面を一度隠す
+            hideAllScreens();
+
+            if (gameMode === 'timed') {
+                readyScreen.classList.remove('hidden');
+            } else {
+                setupGame();
+            }
+        }
+
+        function startTimedNow() {
+            hideAllScreens();
+            setupGame();
+        }
+
+        function restartGame() {
+            if (gameMode === 'timed') {
+                hideAllScreens();
+                readyScreen.classList.remove('hidden');
+            } else {
+                setupGame();
+            }
+        }
+
+        function setupGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            currentInput = "";
+            questions = [];
+            mistakes = [];
+            clearInterval(timerInterval);
+
+            if (gameMode === 'timed') {
+                timeLeft = 60;
+                progressContainer.classList.add('hidden');
+                timerContainer.classList.remove('hidden');
+                timerEl.innerText = timeLeft;
+                timerEl.classList.remove('timer-low');
+                startTimer();
+                generateNextQuestion(); 
+            } else {
+                progressContainer.classList.remove('hidden');
+                timerContainer.classList.add('hidden');
+                if (currentDan === 'random') {
+                    for (let i = 0; i < 9; i++) {
+                        let d = Math.floor(Math.random() * 9) + 1;
+                        let n = Math.floor(Math.random() * 9) + 1;
+                        questions.push({ d, n, a: d * n });
+                    }
+                } else {
+                    let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                    nums.sort(() => Math.random() - 0.5);
+                    for (let n of nums) {
+                        questions.push({ d: currentDan, n: n, a: currentDan * n });
+                    }
+                }
+                updateQuizUI();
+            }
+
+            hideAllScreens();
+            quizScreen.classList.remove('hidden');
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 10) {
+                    timerEl.classList.add('timer-low');
+                }
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    showResult();
+                }
+            }, 1000);
+        }
+
+        function generateNextQuestion() {
+            let d, n;
+            if (currentDan === 'random') {
+                d = Math.floor(Math.random() * 9) + 1;
+            } else {
+                d = currentDan;
+            }
+            n = Math.floor(Math.random() * 9) + 1;
+            questions[currentQuestionIndex] = { d, n, a: d * n };
+            updateQuizUI();
+        }
+
+        function hideAllScreens() {
+            menuScreen.classList.add('hidden');
+            readyScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            confirmModal.classList.add('hidden');
+        }
+
+        function showMenu() {
+            clearInterval(timerInterval);
+            hideAllScreens();
+            menuScreen.classList.remove('hidden');
+        }
+
+        function confirmExit() {
+            confirmModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            confirmModal.classList.add('hidden');
+        }
+
+        function updateQuizUI() {
+            const q = questions[currentQuestionIndex];
+            if (!q) return;
+            questionEl.innerText = `${q.d} × ${q.n} = ?`;
+            answerDisplay.innerHTML = currentInput === "" ? `<span class="inline-block border-b-4 border-blue-400 min-w-[1.5rem] leading-tight">?</span>` : currentInput;
+            currentQEl.innerText = currentQuestionIndex + 1;
+            scoreEl.innerText = score;
+            feedbackEl.innerText = "";
+            feedbackEl.className = "mt-4 text-center h-8 font-bold text-xl";
+        }
+
+        function pressKey(num) {
+            if (currentInput.length < 2) {
+                currentInput += num;
+                answerDisplay.innerText = currentInput;
+            }
+        }
+
+        function clearAnswer() {
+            currentInput = "";
+            answerDisplay.innerHTML = `<span class="inline-block border-b-4 border-blue-400 min-w-[1.5rem] leading-tight">?</span>`;
+        }
+
+        function checkAnswer() {
+            if (currentInput === "" || currentInput === "?") return;
+
+            const q = questions[currentQuestionIndex];
+            const userAnswer = parseInt(currentInput);
+
+            if (userAnswer === q.a) {
+                score++;
+                feedbackEl.innerText = "⭕ せいかい！";
+                feedbackEl.classList.add('text-green-500', 'pop-in');
+                showOverlay("⭕");
+            } else {
+                feedbackEl.innerText = `❌ おしい！ こたえは ${q.a}`;
+                feedbackEl.classList.add('text-red-500');
+                showOverlay("❌");
+                if (gameMode === 'timed') {
+                    mistakes.push({ d: q.d, n: q.n, userAns: userAnswer, correctAns: q.a });
+                }
+            }
+
+            const delay = (gameMode === 'timed') ? 600 : 1000;
+
+            setTimeout(() => {
+                currentInput = "";
+                currentQuestionIndex++;
+                if (gameMode === 'timed') {
+                    if (timeLeft > 0) generateNextQuestion();
+                } else {
+                    if (currentQuestionIndex < questions.length) {
+                        updateQuizUI();
+                    } else {
+                        showResult();
+                    }
+                }
+            }, delay);
+        }
+
+        function showResult() {
+            clearInterval(timerInterval);
+            hideAllScreens();
+            resultScreen.classList.remove('hidden');
+            finalScoreEl.innerText = score + (gameMode === 'timed' ? " もん とけたよ！" : " / 9 てん だったよ！");
+            
+            resultTitle.innerText = gameMode === 'timed' ? "タイムアップ！" : "おつかれさま！";
+            medalContainer.classList.remove('correct-anim');
+
+            const mistakesSection = document.getElementById('mistakes-section');
+            const mistakesList = document.getElementById('mistakes-list');
+            
+            if (gameMode === 'timed') {
+                mistakesSection.style.display = 'flex';
+                mistakesList.innerHTML = '';
+                if (mistakes.length > 0) {
+                    mistakes.forEach(m => {
+                        const li = document.createElement('li');
+                        li.innerText = `${m.d} × ${m.n} = ${m.correctAns} (あなたのこたえ: ${m.userAns})`;
+                        mistakesList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.innerText = "🎉 まちがいなし！すばらしい！";
+                    li.classList.add("text-green-600");
+                    mistakesList.appendChild(li);
+                }
+            } else {
+                if (mistakesSection) mistakesSection.style.display = 'none';
+            }
+
+            if (gameMode === 'normal') {
+                if (score === 9) {
+                    medalContainer.innerText = "👑";
+                    commentEl.innerText = "パーフェクト！きみは九九マスターだ！";
+                    medalContainer.classList.add('correct-anim');
+                } else if (score >= 7) {
+                    medalContainer.innerText = "🥇";
+                    commentEl.innerText = "すごい！あともうすこしで まんてんだね！";
+                } else if (score >= 4) {
+                    medalContainer.innerText = "🥈";
+                    commentEl.innerText = "いいかんじ！つぎは もっといけるよ！";
+                } else {
+                    medalContainer.innerText = "🥉";
+                    commentEl.innerText = "がんばったね！なんかいも れんしゅうしよう！";
+                }
+            } else {
+                if (score >= 30) {
+                    medalContainer.innerText = "⚡️";
+                    commentEl.innerText = "しんじられない！九九の神様だね！";
+                    medalContainer.classList.add('correct-anim');
+                } else if (score >= 20) {
+                    medalContainer.innerText = "🥇";
+                    commentEl.innerText = "超スピード！めちゃくちゃ はやいね！";
+                } else if (score >= 10) {
+                    medalContainer.innerText = "🥈";
+                    commentEl.innerText = "すごい！リズムよく とけていたよ！";
+                } else {
+                    medalContainer.innerText = "🥉";
+                    commentEl.innerText = "つぎは 10もん を めざしてがんばろう！";
+                }
+            }
+        }
+
+        function showOverlay(content) {
+            overlayContent.innerText = content;
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 500);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (!quizScreen.classList.contains('hidden')) {
+                    confirmExit();
+                } else if (!readyScreen.classList.contains('hidden') || !resultScreen.classList.contains('hidden')) {
+                    showMenu();
+                } else if (!confirmModal.classList.contains('hidden')) {
+                    closeModal();
+                }
+                return;
+            }
+
+            if (quizScreen.classList.contains('hidden')) return;
+            
+            if (e.key >= '0' && e.key <= '9') {
+                pressKey(e.key);
+            } else if (e.key === 'Enter') {
+                checkAnswer();
+            } else if (e.key === 'Backspace') {
+                clearAnswer();
+            }
+        });
+    </script>
+</body>
+</html>

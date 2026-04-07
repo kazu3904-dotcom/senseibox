@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ランダム番号くじ（3秒演出）</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#223043;
+      --muted:#7a8899;
+      --accent:#3b82f6;
+      --ok:#2ecc71;
+      --danger: #e74c3c;
+      --shadow:0 10px 24px rgba(0,0,0,.08);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: "Noto Sans JP", sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      display:flex;
+      justify-content:center;
+      padding:20px;
+      min-height: 100vh;
+    }
+    /* スマホ向け調整: 余白を減らす */
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+    }
+
+    .app{
+      width:min(920px, 100%);
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* スマホ向け調整: カード内余白を減らす */
+    @media (max-width: 480px) {
+      .app { padding: 16px; border-radius: 16px; }
+    }
+
+    header{
+      text-align:center;
+      font-weight:700;
+      font-size: 1.2rem;
+      letter-spacing:.04em;
+      margin:0 0 20px;
+      color: var(--text);
+    }
+
+    .top{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:24px;
+      align-items:center;
+    }
+    @media (max-width:720px){
+      /* スマホでは縦並び、gapを調整 */
+      .top{grid-template-columns:1fr; gap: 24px;}
+    }
+
+    /* 左側：円形の表示エリア */
+    .circleWrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:10px;
+    }
+    .circle{
+      width:min(300px, 100%);
+      aspect-ratio:1/1;
+      border-radius:50%;
+      background:var(--accent);
+      box-shadow: 
+        0 20px 40px rgba(59, 130, 246, 0.4),
+        inset 0 -10px 20px rgba(0,0,0,0.1);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      position:relative;
+      overflow:hidden;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    /* スマホでは円を少し小さくして画面に収めやすくする */
+    @media (max-width: 480px) {
+      .circle { width: min(220px, 100%); }
+    }
+
+    .circle.popping {
+      transform: scale(1.05);
+    }
+    .circle::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), transparent 60%);
+      transform:rotate(12deg);
+      pointer-events: none;
+    }
+    .num{
+      position:relative;
+      z-index:1;
+      font-family: "Inter", sans-serif;
+      font-size: clamp(60px, 15vw, 100px);
+      font-weight:900;
+      color:#fff;
+      text-shadow:0 4px 0 rgba(0,0,0,.15);
+      letter-spacing:-0.02em;
+      font-feature-settings: "tnum";
+    }
+
+    /* 右側：コントロールエリア */
+    .right{
+      padding:0 10px;
+    }
+    /* スマホではpaddingをなくす */
+    @media (max-width: 720px) {
+      .right { padding: 0; }
+    }
+
+    .display-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+      /* スマホでは中央寄せにする */
+      justify-content: center;
+    }
+    @media (min-width: 721px) {
+      .display-row { justify-content: flex-start; }
+    }
+
+    .label{
+      font-size:14px;
+      font-weight: 700;
+      color:var(--muted);
+    }
+    .big{
+      font-family: "Inter", sans-serif;
+      font-size:48px;
+      font-weight:900;
+      line-height: 1;
+      color: var(--text);
+      font-feature-settings: "tnum";
+    }
+    .hint{
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.6;
+      margin:0 0 20px;
+      /* スマホではヒントを少し小さく、中央揃え */
+      text-align: center;
+    }
+    @media (min-width: 721px) {
+      .hint { text-align: left; }
+    }
+
+    /* 人数セットボタン */
+    .gridBtns{
+      display:grid;
+      /* スマホで押しやすいように最小幅を調整 */
+      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+      gap:8px;
+      margin:16px 0 16px;
+    }
+    .btn{
+      border:1px solid #e4e9f2;
+      background:#fbfcff;
+      border-radius:12px;
+      padding:10px 4px;
+      font-size:14px;
+      font-weight:700;
+      color: var(--muted);
+      cursor:pointer;
+      transition:all .15s ease;
+      user-select:none;
+      /* スマホでのタップ領域確保 */
+      min-height: 44px;
+    }
+    .btn:hover { background: #fff; border-color: #d7dde6; color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .btn:active{transform:scale(.96)}
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+    /* 設定入力エリア */
+    .settings-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:16px 0 20px;
+      /* スマホでは中央寄せ */
+      justify-content: center;
+    }
+    @media (min-width: 721px) {
+      .settings-row { justify-content: flex-start; }
+    }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:#f0f3f8;
+      border:1px solid rgba(0,0,0,0.05);
+      border-radius:999px;
+      padding:6px 16px 6px 12px;
+    }
+    .pill span { font-size: 13px; font-weight: 700; color: var(--muted); }
+    input[type="number"]{
+      width:80px;
+      font-size:18px;
+      font-family: "Inter", sans-serif;
+      font-weight:700;
+      padding:4px 8px;
+      border:2px solid transparent;
+      border-radius:8px;
+      outline:none;
+      background:#fff;
+      color: var(--text);
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    input[type="number"]:focus{border-color:#8fb3ff}
+
+    /* メインアクションボタン */
+    .actions{
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:12px;
+      margin-top:10px;
+    }
+    .action{
+      border:none;
+      border-radius:16px;
+      padding:16px;
+      font-size:18px;
+      font-weight:700;
+      cursor:pointer;
+      color:#fff;
+      transition: transform 0.1s, filter 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      /* スマホでの押しやすさ */
+      min-height: 56px;
+    }
+    .action:active { transform: translateY(2px); }
+    .start{ background:var(--ok); }
+    .start:hover { filter: brightness(1.05); }
+    .reset{ background:#95a5a6; color: white; }
+    .reset:hover { filter: brightness(1.05); }
+    .action:disabled{opacity:.6; cursor:not-allowed; transform:none; box-shadow: none;}
+
+    /* 下部パネル */
+    .bottom{
+      margin-top:24px;
+      border-top:2px dashed #edf2f7;
+      padding-top:20px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:20px;
+    }
+    @media (max-width:720px){
+      .bottom{grid-template-columns:1fr}
+    }
+    .panel{
+      background:#fcfdff;
+      border:1px solid #edf2f7;
+      border-radius:16px;
+      padding:16px;
+    }
+    .panel h3{
+      margin:0 0 12px;
+      font-size:14px;
+      color:var(--text);
+      letter-spacing:.03em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-count {
+      font-weight: normal;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .history{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      max-height:180px;
+      overflow-y:auto;
+      padding-right:4px;
+    }
+    .history::-webkit-scrollbar { width: 6px; }
+    .history::-webkit-scrollbar-thumb { background: #d7dde6; border-radius: 3px; }
+
+    .tag{
+      background:#fff;
+      border:1px solid #d7dde6;
+      border-radius:8px;
+      padding:6px 12px;
+      font-weight:700;
+      font-family: "Inter", sans-serif;
+      min-width:48px;
+      text-align:center;
+      color: var(--text);
+      font-feature-settings: "tnum";
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .miniRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:13px;
+      line-height: 1.5;
+    }
+
+    /* 重複なしモード用のトグル */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      gap: 8px;
+      user-select: none;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #cbd5e1;
+      border-radius: 999px;
+      transition: background 0.3s;
+    }
+    .toggle-input { display: none; }
+    .toggle-input:checked + .toggle-switch { background: var(--ok); }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-input:checked + .toggle-switch::after { transform: translateX(20px); }
+
+    /* モーダル */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 100;
+      border-radius: var(--radius);
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      text-align: center;
+      max-width: 80%;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+      border: 1px solid #edf2f7;
+    }
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .modal-body {
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 15px;
+    }
+    .modal-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .modal-btn:hover { filter: brightness(1.1); }
+
+    /* トースト通知 */
+    .toast {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #333;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 101;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" role="application" aria-label="ランダム番号くじ">
+    <header>ランダム番号くじ</header>
+
+    <div class="top">
+      <div class="circleWrap">
+        <div class="circle" id="circle" aria-hidden="true">
+          <div class="num" id="numInCircle">?</div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="display-row">
+          <div class="label">現在の番号</div>
+          <div class="big" id="display">—</div>
+        </div>
+        <p class="hint">
+          「スタート」で <b>3秒間</b> ドラムロール演出が始まり、最後に「ピッ」と鳴って番号が確定します。
+        </p>
+
+        <div class="gridBtns">
+          <button class="btn" data-set="10">10</button>
+          <button class="btn" data-set="20">20</button>
+          <button class="btn" data-set="30">30</button>
+          <button class="btn" data-set="40">40</button>
+          <button class="btn" data-set="50">50</button>
+          <button class="btn" data-set="75">75</button>
+        </div>
+
+        <div class="gridBtns" style="margin-top:-8px; margin-bottom:16px;">
+          <button class="btn" data-add="-5">-5</button>
+          <button class="btn" data-add="-1">-1</button>
+          <button class="btn" data-add="1">+1</button>
+          <button class="btn" data-add="5">+5</button>
+        </div>
+
+        <div class="settings-row">
+          <div class="pill">
+            <span>最大値</span>
+            <input id="nInput" type="number" min="1" step="1" value="30" />
+          </div>
+
+          <label class="toggle-wrap" title="一度出た番号はリセットするまで出なくなります">
+            <input type="checkbox" id="uniqueToggle" class="toggle-input" checked>
+            <div class="toggle-switch"></div>
+            <span style="font-size:13px; font-weight:700; color:var(--text);">重複なし</span>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="startBtn" class="action start">スタート</button>
+          <button id="resetBtn" class="action reset">リセット</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="panel">
+        <h3>
+          履歴（出た番号）
+          <span class="history-count" id="historyCount">0件</span>
+        </h3>
+        <div class="history" id="history"></div>
+      </div>
+
+      <div class="panel">
+        <h3>設定・補足</h3>
+        <div class="miniRow">
+          <span>・「重複なし」をONにすると、すべての番号が出るまで同じ番号が出ません（ビンゴ形式）。</span>
+          <span>・設定を変更すると履歴は自動的にリセットされます。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- カスタムアラートモーダル -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-content">
+        <div class="modal-title" id="modalTitle">完了！</div>
+        <div class="modal-body" id="modalBody">すべての番号が出ました。<br>リセットして次のゲームを始めましょう。</div>
+        <button class="modal-btn" id="modalCloseBtn">OK</button>
+      </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div class="toast" id="toast">履歴をリセットしました</div>
+  </div>
+
+  <script>
+    // ====== 設定 ======
+    const FX_DURATION_MS = 3000;      // 3秒演出
+    const TICK_MS = 50;               // 数字切替速度
+    // ===================
+
+    const nInput = document.getElementById("nInput");
+    const display = document.getElementById("display");
+    const numInCircle = document.getElementById("numInCircle");
+    const circle = document.getElementById("circle");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const historyEl = document.getElementById("history");
+    const historyCountEl = document.getElementById("historyCount");
+    const uniqueToggle = document.getElementById("uniqueToggle");
+    
+    // UI Elements for replacement of alert/confirm
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
+    const toast = document.getElementById("toast");
+
+    let ticking = null;
+    let lastFinal = null;     // 直前の確定番号
+    let current = null;       // 演出中の表示番号
+    let history = [];         // 出た番号のリスト
+    
+    // Audio Context (Global to reuse)
+    let audioCtx = null;
+
+    // トースト表示関数
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    }
+
+    // モーダル表示関数
+    function showModal(title, body) {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = body;
+      modalOverlay.classList.add("active");
+    }
+
+    modalCloseBtn.addEventListener("click", () => {
+      modalOverlay.classList.remove("active");
+    });
+
+    // 履歴リセット確認用関数（自動リセットに変更）
+    function checkAndResetHistory() {
+      if(history.length > 0) {
+        resetAll(true); // true = silent reset (no animation reset, but show toast)
+        showToast("設定変更により履歴をリセットしました");
+      }
+    }
+
+    // クリックで人数セット（プリセット）
+    document.querySelectorAll("[data-set]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        nInput.value = btn.dataset.set;
+        checkAndResetHistory();
+      });
+    });
+
+    // クリックで増減（微調整）
+    document.querySelectorAll("[data-add]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        let current = parseInt(nInput.value, 10);
+        if (isNaN(current)) current = 0;
+        
+        let addVal = parseInt(btn.dataset.add, 10);
+        let nextVal = current + addVal;
+        
+        if (nextVal < 1) nextVal = 1;
+        nInput.value = nextVal;
+        
+        checkAndResetHistory();
+      });
+    });
+    
+    // 入力が変わった場合もチェック
+    nInput.addEventListener("change", () => {
+       if(parseInt(nInput.value) < 1) nInput.value = 1;
+       checkAndResetHistory();
+    });
+
+    function clampN() {
+      let n = parseInt(nInput.value, 10);
+      if (!Number.isFinite(n) || n < 1) n = 1;
+      nInput.value = n;
+      return n;
+    }
+
+    function setDisplay(v) {
+      const text = (v == null ? "—" : String(v));
+      display.textContent = (v == null ? "—" : String(v).padStart(2, "0"));
+      numInCircle.textContent = (v == null ? "?" : text);
+    }
+
+    function renderHistory() {
+      historyEl.innerHTML = "";
+      history.forEach((v) => {
+        const tag = document.createElement("div");
+        tag.className = "tag";
+        tag.textContent = v;
+        historyEl.appendChild(tag);
+      });
+      // 自動スクロール
+      historyEl.scrollTop = historyEl.scrollHeight;
+      historyCountEl.textContent = history.length + "件";
+    }
+
+    // 1〜Nのランダム整数
+    function randInt1toN(n) {
+      return Math.floor(Math.random() * n) + 1;
+    }
+
+    // オーディオ初期化・再生
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function beep() {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.05); // ピッっと上がる
+        
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.1);
+      } catch (e) {
+        console.log("Audio play failed", e);
+      }
+    }
+
+    function setControlsDisabled(disabled) {
+      startBtn.disabled = disabled;
+      nInput.disabled = disabled;
+      uniqueToggle.disabled = disabled;
+      document.querySelectorAll("[data-set]").forEach(b => b.disabled = disabled);
+      document.querySelectorAll("[data-add]").forEach(b => b.disabled = disabled);
+    }
+
+    function startFx() {
+      // ユーザーインタラクションのタイミングでAudioContextを準備
+      initAudio();
+
+      const n = clampN();
+      const isUnique = uniqueToggle.checked;
+
+      // 重複なしモードで、もう全部出てしまった場合
+      if (isUnique && history.length >= n) {
+        showModal("完了！", "すべての番号が出ました。<br>「リセット」ボタンを押して新しく始めてください。");
+        return;
+      }
+
+      setControlsDisabled(true);
+      resetBtn.disabled = true;
+      circle.classList.remove("popping");
+
+      // 抽選候補リスト（重複なしの場合に使う）
+      let candidates = [];
+      if (isUnique) {
+        // 1..n の中で history に含まれていないものを探す
+        for (let i = 1; i <= n; i++) {
+          if (!history.includes(i)) candidates.push(i);
+        }
+      }
+
+      // 演出開始
+      ticking = setInterval(() => {
+        // 演出中は完全にランダムでOK（見た目の楽しさ優先）
+        current = randInt1toN(n);
+        setDisplay(current);
+      }, TICK_MS);
+
+      // 3秒後に確定
+      setTimeout(() => {
+        clearInterval(ticking);
+        ticking = null;
+
+        let final;
+
+        if (isUnique) {
+          // 残り候補からランダムに1つ選ぶ
+          if (candidates.length === 0) {
+            final = randInt1toN(n); 
+          } else {
+            const idx = Math.floor(Math.random() * candidates.length);
+            final = candidates[idx];
+          }
+        } else {
+            // 通常モード（直前重複回避のみ）
+            final = current ?? randInt1toN(n);
+            if (n > 1 && final === lastFinal) {
+                // 直前と同じなら最大10回引き直して回避を試みる
+                for (let i = 0; i < 10; i++) {
+                    const t = randInt1toN(n);
+                    if (t !== lastFinal) { final = t; break; }
+                }
+            }
+        }
+
+        lastFinal = final;
+        setDisplay(final);
+        
+        // 確定演出
+        beep();
+        circle.classList.add("popping");
+
+        // 履歴追加
+        history.push(final);
+        renderHistory();
+
+        setControlsDisabled(false);
+        resetBtn.disabled = false;
+      }, FX_DURATION_MS);
+    }
+
+    function resetAll(silent = false) {
+      if (ticking) {
+        clearInterval(ticking);
+        ticking = null;
+      }
+      lastFinal = null;
+      current = null;
+      history = [];
+      setDisplay(null);
+      renderHistory();
+      setControlsDisabled(false);
+      resetBtn.disabled = false;
+      circle.classList.remove("popping");
+      
+      if (!silent) {
+        showToast("リセットしました");
+      }
+    }
+
+    startBtn.addEventListener("click", startFx);
+    resetBtn.addEventListener("click", () => resetAll(false));
+
+    // 初期表示
+    setDisplay(null);
+    renderHistory();
+  </script>
+</body>
+</html>

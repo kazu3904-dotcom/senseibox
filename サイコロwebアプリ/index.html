@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>サイコロ（1〜4個 / 合計タップ表示）</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --ink: #111;
+            --muted: #666;
+            --shadow: 0 10px 28px rgba(0, 0, 0, .12);
+            --pip: #111;
+            --cube: #ffffff;
+            --edge: #d9d9df;
+            --accent: #2b6df6;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", sans-serif;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+        }
+
+        .app {
+            width: min(860px, 96vw);
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 18px 18px 14px;
+        }
+
+        header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select,
+        button {
+            font-size: 16px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #e1e1ea;
+            background: #fff;
+        }
+
+        button {
+            cursor: pointer;
+            border: 0;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 600;
+            padding: 10px 16px;
+        }
+
+        button:active {
+            transform: translateY(1px)
+        }
+
+        .hint {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .stage {
+            margin-top: 12px;
+            background: linear-gradient(180deg, #fafbff, #f2f4ff);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #e8e9f4;
+        }
+
+        .dice-row {
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            min-height: 180px;
+        }
+
+        /* 立体っぽいキューブ */
+        .die-wrap {
+            width: 110px;
+            height: 110px;
+            perspective: 700px;
+            display: grid;
+            place-items: center;
+        }
+
+        .die {
+            width: 92px;
+            height: 92px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 900ms cubic-bezier(.2, .8, .2, 1);
+        }
+
+        .face {
+            position: absolute;
+            inset: 0;
+            background: var(--cube);
+            border: 1px solid var(--edge);
+            border-radius: 16px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+            display: grid;
+            padding: 12px;
+            transform-style: preserve-3d;
+        }
+
+        /* 面の配置（キューブ6面） */
+        .f1 {
+            transform: translateZ(46px);
+        }
+
+        .f6 {
+            transform: rotateY(180deg) translateZ(46px);
+        }
+
+        .f2 {
+            transform: rotateY(90deg) translateZ(46px);
+        }
+
+        .f5 {
+            transform: rotateY(-90deg) translateZ(46px);
+        }
+
+        .f3 {
+            transform: rotateX(90deg) translateZ(46px);
+        }
+
+        .f4 {
+            transform: rotateX(-90deg) translateZ(46px);
+        }
+
+        /* 影っぽい底面 */
+        .shadow {
+            position: absolute;
+            width: 92px;
+            height: 92px;
+            border-radius: 18px;
+            background: radial-gradient(closest-side, rgba(0, 0, 0, .22), rgba(0, 0, 0, 0));
+            filter: blur(2px);
+            transform: translateY(58px) rotateX(90deg);
+            opacity: .55;
+        }
+
+        /* ピップ（点） */
+        .pips {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .pip {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--pip);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset;
+            opacity: 0;
+        }
+
+        /* 目ごとの点配置（1〜6） */
+        .v1 .pip:nth-child(5) {
+            opacity: 1
+        }
+
+        .v2 .pip:nth-child(1),
+        .v2 .pip:nth-child(9) {
+            opacity: 1
+        }
+
+        .v3 .pip:nth-child(1),
+        .v3 .pip:nth-child(5),
+        .v3 .pip:nth-child(9) {
+            opacity: 1
+        }
+
+        .v4 .pip:nth-child(1),
+        .v4 .pip:nth-child(3),
+        .v4 .pip:nth-child(7),
+        .v4 .pip:nth-child(9) {
+            opacity: 1
+        }
+
+        .v5 .pip:nth-child(1),
+        .v5 .pip:nth-child(3),
+        .v5 .pip:nth-child(5),
+        .v5 .pip:nth-child(7),
+        .v5 .pip:nth-child(9) {
+            opacity: 1
+        }
+
+        .v6 .pip:nth-child(1),
+        .v6 .pip:nth-child(3),
+        .v6 .pip:nth-child(4),
+        .v6 .pip:nth-child(6),
+        .v6 .pip:nth-child(7),
+        .v6 .pip:nth-child(9) {
+            opacity: 1
+        }
+
+        /* 2桁以上の数字を出すためのテキストレイヤー */
+        .dv-text {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: 44px;
+            font-weight: 800;
+            opacity: 0;
+            color: var(--ink);
+        }
+
+        /* 振ってる感（CSS transitionで実現） */
+
+        /* 合計：最初は伏せる。タップで表示 */
+        .sum {
+            margin-top: 14px;
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px dashed #cfd3ff;
+            background: #ffffffcc;
+            user-select: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sum .label {
+            font-weight: 700
+        }
+
+        .sum .value {
+            font-weight: 800;
+            letter-spacing: .5px;
+            font-size: 18px;
+        }
+
+        /* 履歴表示用 */
+        .history {
+            margin-top: 14px;
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid #e1e1ea;
+            background: #fff;
+            display: none;
+        }
+
+        .hist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .hist-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .reset-btn {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #eee;
+            color: #333;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .hist-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .hist-item {
+            display: grid;
+            place-items: center;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 6px;
+            background: #f0f2f8;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .sum.hidden .value {
+            filter: blur(7px);
+            opacity: .45
+        }
+
+        .sum.hidden .tip {
+            color: var(--muted)
+        }
+
+        .sum .tip {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .sum:active {
+            transform: translateY(1px)
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .kbd {
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app" aria-label="サイコロアプリ">
+        <header>
+            <h1>サイコロ（6面 / 1〜4個）</h1>
+            <div class="controls">
+                <label>
+                    個数：
+                    <select id="count">
+                        <option value="1">1個</option>
+                        <option value="2">2個</option>
+                        <option value="3">3個</option>
+                        <option value="4">4個</option>
+                    </select>
+                </label>
+                <label id="maxValWrap" style="display:flex; align-items:center; gap:4px; font-weight:bold;">
+                    面数：
+                    <input type="number" id="maxVal" min="2" max="999" value="6"
+                        style="width:72px; text-align:center; font-size:16px;">
+                </label>
+                <label id="noDupesWrap"
+                    style="font-size:15px; display:flex; align-items:center; gap:4px; font-weight:bold; cursor:pointer;"
+                    title="チェックを入れると、同じ目が二度出なくなります（くじ引き用）">
+                    <input type="checkbox" id="noDupes" style="width:18px;height:18px;cursor:pointer;"> 重複なし
+                </label>
+                <label id="alwaysShowWrap"
+                    style="font-size:15px; display:none; align-items:center; gap:4px; font-weight:bold; cursor:pointer;"
+                    title="チェックを入れると、振った直後から合計が表示されます">
+                    <input type="checkbox" id="alwaysShow" style="width:18px;height:18px;cursor:pointer;"> 常に合計を表示
+                </label>
+                <button id="roll">ふる</button>
+                <span class="hint">※スペースキーでも「ふる」</span>
+            </div>
+        </header>
+
+        <section class="stage">
+            <div id="diceRow" class="dice-row"></div>
+
+            <div id="sumBox" class="sum hidden" role="button" tabindex="0" aria-label="合計（タップで表示）">
+                <div>
+                    <div class="label">合計</div>
+                    <div class="tip" id="sumTip">タップで表示（2〜4個のとき）</div>
+                </div>
+                <div class="value" id="sumValue">—</div>
+            </div>
+
+            <div id="historyBox" class="history">
+                <div class="hist-header">
+                    <div class="hist-title">出た履歴 <span id="dupesLabel"
+                            style="font-weight:normal; font-size:12px; color:#666;"></span></div>
+                    <div style="display:flex; gap:8px;">
+                        <button id="toggleHistoryBtn" class="reset-btn">隠す</button>
+                        <button id="resetHistory" class="reset-btn">リセット</button>
+                    </div>
+                </div>
+                <div id="historyList" class="hist-list"></div>
+            </div>
+
+            <div class="footer">
+                <div>表示：立体サイコロ風 + アニメーション</div>
+                <div>操作：<span class="kbd">Space</span> で振る / 合計はタップで表示</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const diceRow = document.getElementById("diceRow");
+        const countEl = document.getElementById("count");
+        const rollBtn = document.getElementById("roll");
+        const sumBox = document.getElementById("sumBox");
+        const sumValue = document.getElementById("sumValue");
+        const sumTip = document.getElementById("sumTip");
+        const alwaysShowEl = document.getElementById("alwaysShow");
+        const alwaysShowWrap = document.getElementById("alwaysShowWrap");
+        const maxValEl = document.getElementById("maxVal");
+        const maxValWrap = document.getElementById("maxValWrap");
+        const noDupesEl = document.getElementById("noDupes");
+        const noDupesWrap = document.getElementById("noDupesWrap");
+        const historyBox = document.getElementById("historyBox");
+        const historyList = document.getElementById("historyList");
+        const toggleHistoryBtn = document.getElementById("toggleHistoryBtn");
+        const resetHistoryBtn = document.getElementById("resetHistory");
+
+        let currentValues = [1];
+        let sumRevealed = false;
+        let historyVisible = true;
+        let drawnHistory = []; // 重複ありなし両方で全履歴を記録する配列
+
+        // 出目 → キューブの向き（どの面を前に見せるか）
+        // ここでは「出目の面を正面にする」向きを定義
+        // 7以上の場合も正面（f1）を見せるように統一するため、ベースとしては1と同じ向き(0,0)を返すフォールバックを作る
+        const faceToRotation = {
+            1: { x: 0, y: 0 },
+            2: { x: 0, y: -90 },
+            3: { x: -90, y: 0 },
+            4: { x: 90, y: 0 },
+            5: { x: 0, y: 90 },
+            6: { x: 0, y: 180 },
+        };
+
+        function getRotation(value) {
+            return faceToRotation[value] || { x: 0, y: 0 };
+        }
+
+        // x面のランダム（重複なしの場合は履歴をチェック）
+        function randValue(max, useHistory = false) {
+            if (!useHistory) {
+                return Math.floor(Math.random() * max) + 1;
+            }
+            if (drawnHistory.length >= max) return null; // 全部出た
+            let val;
+            do {
+                val = Math.floor(Math.random() * max) + 1;
+            } while (drawnHistory.includes(val));
+            return val;
+        }
+
+        function createFace(valueClass) {
+            const face = document.createElement("div");
+            face.className = "face " + valueClass;
+
+            const pips = document.createElement("div");
+            pips.className = "pips " + valueClass;
+
+            // 3x3=9個のpipを作る（必要なところだけopacity=1）
+            for (let i = 0; i < 9; i++) {
+                const pip = document.createElement("div");
+                pip.className = "pip";
+                pips.appendChild(pip);
+            }
+
+            // 数字表示用レイヤー（大面数用）
+            const textLayer = document.createElement("div");
+            textLayer.className = "dv-text";
+
+            face.appendChild(pips);
+            face.appendChild(textLayer);
+            return face;
+        }
+
+        function createDie(initialValue = 1) {
+            const wrap = document.createElement("div");
+            wrap.className = "die-wrap";
+
+            const die = document.createElement("div");
+            die.className = "die";
+            die.dataset.value = String(initialValue);
+
+            // 影
+            const shadow = document.createElement("div");
+            shadow.className = "shadow";
+            die.appendChild(shadow);
+
+            // 6面（それぞれpip配置を持つ）
+            const faces = [
+                { cls: "f1", val: 1 },
+                { cls: "f2", val: 2 },
+                { cls: "f3", val: 3 },
+                { cls: "f4", val: 4 },
+                { cls: "f5", val: 5 },
+                { cls: "f6", val: 6 },
+            ];
+
+            for (const f of faces) {
+                const face = createFace("v" + f.val);
+                face.classList.add(f.cls);
+                die.appendChild(face);
+            }
+
+            // 初期向き
+            setDieToValue(die, initialValue, false);
+
+            wrap.appendChild(die);
+            return wrap;
+        }
+
+        function setDieToValue(die, value, animate = true) {
+            const count = Number(countEl.value);
+            const max = Number(maxValEl.value);
+            const isCustom = count === 1 && max > 6;
+            const targetFaceVal = isCustom ? 1 : value; // カスタムの場合は常に正面(f1)を向ける
+            const rot = getRotation(targetFaceVal);
+            let x = rot.x;
+            let y = rot.y;
+
+            // pipかtextかの切り替え
+            const faces = die.querySelectorAll('.face');
+            faces.forEach(f => {
+                const pips = f.querySelector('.pips');
+                const text = f.querySelector('.dv-text');
+                if (isCustom) {
+                    pips.style.opacity = 0;
+                    if (f.classList.contains('f1')) {
+                        text.textContent = value;
+                        text.style.opacity = 1;
+                    } else {
+                        text.style.opacity = 0;
+                    }
+                } else {
+                    pips.style.opacity = 1;
+                    text.style.opacity = 0;
+                }
+            });
+
+            if (animate) {
+                // ランダムに360度の倍数を足して激しく回転させる
+                const turnsX = (Math.floor(Math.random() * 2) + 2) * (Math.random() < 0.5 ? 1 : -1);
+                const turnsY = (Math.floor(Math.random() * 2) + 2) * (Math.random() < 0.5 ? 1 : -1);
+
+                // CSS transitionが有効か確認
+                die.style.transition = "transform 900ms cubic-bezier(.2,.8,.2,1)";
+                die.style.transform = `rotateX(${x + turnsX * 360}deg) rotateY(${y + turnsY * 360}deg) rotateZ(0deg)`;
+            } else {
+                die.style.transition = "none";
+                die.style.transform = `rotateX(${x}deg) rotateY(${y}deg) rotateZ(0deg)`;
+                // 次のフレームでtransitionを戻すためにリフローを強制
+                void die.offsetWidth;
+                die.style.transition = "transform 900ms cubic-bezier(.2,.8,.2,1)";
+            }
+
+            die.dataset.value = String(value);
+        }
+
+        function renderDice(count) {
+            diceRow.innerHTML = "";
+            currentValues = [];
+
+            const max = count === 1 ? Number(maxValEl.value) : 6;
+            const noDupes = count === 1 && noDupesEl.checked;
+
+            for (let i = 0; i < count; i++) {
+                const v = randValue(max, noDupes) || 1;
+                // 初期表示で不要に履歴がたまらないように、初期は1を入れて履歴に足さないか、
+                // もしくは初期表示用の1だったら無視する
+                if (v !== 1 && drawnHistory.length === 0 && count === 1) {
+                    // もし初期ロールでランダムに行うなら追加する
+                }
+                currentValues.push(v);
+                diceRow.appendChild(createDie(v));
+            }
+
+            updateHistoryUI();
+            updateSumUI();
+        }
+
+        function updateHistoryUI() {
+            historyList.innerHTML = "";
+            const dupesLabel = document.getElementById("dupesLabel");
+            if (dupesLabel) {
+                dupesLabel.textContent = noDupesEl.checked ? "（重複なし）" : "（重複あり）";
+            }
+            drawnHistory.forEach(v => {
+                const item = document.createElement("div");
+                item.className = "hist-item";
+                item.textContent = v;
+                historyList.appendChild(item);
+            });
+        }
+
+        function rollAll() {
+            const count = Number(countEl.value);
+            const max = count === 1 ? Number(maxValEl.value) : 6;
+            const noDupes = count === 1 && noDupesEl.checked;
+            const dice = [...diceRow.querySelectorAll(".die")];
+
+            // 必要なら作り直し
+            if (dice.length !== count) {
+                renderDice(count);
+            }
+
+            // 合計の表示状態（常に表示なら最初から表示する）
+            if (count === 1) {
+                sumRevealed = true;
+            } else {
+                sumRevealed = alwaysShowEl.checked;
+            }
+
+            if (noDupes) {
+                if (drawnHistory.length >= max) {
+                    alert("すべての数が出尽くしました。履歴をリセットしてください。");
+                    return;
+                }
+            }
+
+            currentValues = [];
+            const updatedDice = [...diceRow.querySelectorAll(".die")];
+            updatedDice.forEach((die) => {
+                const v = randValue(max, noDupes);
+                if (v === null) return; // 出尽くしている場合は処理しない
+
+                drawnHistory.push(v); // 配列にしてすべて記録
+
+                currentValues.push(v);
+                setDieToValue(die, v, true);
+            });
+
+            // サイコロの回転アニメーション(900ms)が終わるまでUIの更新を待つ
+            setTimeout(() => {
+                updateHistoryUI();
+                updateSumUI();
+            }, 900);
+        }
+
+        function total() {
+            return currentValues.reduce((a, b) => a + b, 0);
+        }
+
+        function updateSumUI() {
+            const count = Number(countEl.value);
+            const noDupes = noDupesEl.checked;
+
+            // UI出し分け制御
+            if (count === 1) {
+                maxValWrap.style.display = "flex";
+                noDupesWrap.style.display = "flex";
+                alwaysShowWrap.style.display = "none";
+                sumBox.style.display = "none";
+                historyBox.style.display = "block";
+            } else {
+                maxValWrap.style.display = "none";
+                noDupesWrap.style.display = "none";
+                alwaysShowWrap.style.display = "flex";
+                sumBox.style.display = "flex";
+                historyBox.style.display = "none";
+            }
+
+            if (count === 1) return; // 1個のときは合計関連はいらない（あるいは出目）
+
+            // 2〜4個
+            const formula = currentValues.join(" + ") + " = " + total();
+
+            if (!sumRevealed) {
+                sumBox.classList.add("hidden");
+                sumTip.textContent = "タップで表示（2〜4個のとき）";
+                sumValue.textContent = formula; // 伏せつつ値は持っておく
+            } else {
+                sumBox.classList.remove("hidden");
+                sumTip.textContent = "もう一度タップで非表示";
+                sumValue.textContent = formula;
+            }
+        }
+
+        function toggleSum() {
+            const count = Number(countEl.value);
+            if (count === 1) return; // 1個は常に表示
+
+            sumRevealed = !sumRevealed;
+            updateSumUI();
+        }
+
+        // 初期表示
+        sumRevealed = (Number(countEl.value) === 1) || alwaysShowEl.checked;
+        renderDice(Number(countEl.value));
+
+        // イベント
+        countEl.addEventListener("change", () => {
+            drawnHistory = [];
+            updateHistoryUI();
+            renderDice(Number(countEl.value));
+            if (Number(countEl.value) === 1) {
+                sumRevealed = true;
+            } else {
+                sumRevealed = alwaysShowEl.checked;
+            }
+            updateSumUI();
+        });
+
+        maxValEl.addEventListener("change", () => {
+            if (Number(countEl.value) === 1) {
+                drawnHistory = [];
+                updateHistoryUI();
+                renderDice(1);
+            }
+        });
+
+        resetHistoryBtn.addEventListener("click", () => {
+            drawnHistory = [];
+            updateHistoryUI();
+            // サイコロの表示を1に戻すか悩ましいですが、一旦履歴だけ消します
+        });
+
+        toggleHistoryBtn.addEventListener("click", () => {
+            historyVisible = !historyVisible;
+            if (historyVisible) {
+                historyList.style.display = "flex";
+                toggleHistoryBtn.textContent = "隠す";
+            } else {
+                historyList.style.display = "none";
+                toggleHistoryBtn.textContent = "表示";
+            }
+        });
+
+        alwaysShowEl.addEventListener("change", () => {
+            if (Number(countEl.value) >= 2) {
+                sumRevealed = alwaysShowEl.checked;
+                updateSumUI();
+            }
+        });
+
+        noDupesEl.addEventListener("change", () => {
+            drawnHistory = [];
+            updateHistoryUI();
+            updateSumUI();
+            renderDice(Number(countEl.value));
+        });
+
+        rollBtn.addEventListener("click", rollAll);
+
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                rollAll();
+            }
+            if (e.code === "Enter") {
+                // 合計ボックスにフォーカスしてる時はEnterで切替
+                if (document.activeElement === sumBox) {
+                    toggleSum();
+                }
+            }
+        });
+
+        sumBox.addEventListener("click", toggleSum);
+        sumBox.addEventListener("keydown", (e) => {
+            if (e.code === "Enter" || e.code === "Space") {
+                e.preventDefault();
+                toggleSum();
+            }
+        });
+    </script>
+</body>
+
+</html>

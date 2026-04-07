@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>カスタムルーレット</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+    body {
+      font-family: 'M PLUS Rounded 1c', system-ui, sans-serif;
+      background-color: #f0f4f8;
+      color: #334155;
+      /* スマホでのバウンススクロール防止など */
+      overscroll-behavior-y: none;
+    }
+    /* スクロールバーのカスタマイズ */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9; 
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1; 
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-2 md:p-8 bg-slate-100 pb-10">
+
+  <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 items-start">
+    
+    <!-- 左カラム：ルーレット盤 -->
+    <!-- スマホでは余白を小さく(p-3)、PCでは広く(md:p-6) -->
+    <div class="bg-white rounded-2xl shadow-lg p-2 md:p-6 flex flex-col items-center justify-center relative overflow-hidden ring-1 ring-slate-100">
+      <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+      
+      <!-- ルーレット本体：画面幅いっぱいにしつつ、最大サイズを制限 -->
+      <div class="w-full max-w-[400px] lg:max-w-[500px] aspect-square relative my-2">
+        <canvas id="wheel" width="1000" height="1000" class="w-full h-full object-contain drop-shadow-md"></canvas>
+      </div>
+
+      <div class="mt-2 text-center w-full">
+        <div id="result" class="text-3xl md:text-4xl font-black text-indigo-600 min-h-[1.2em] leading-tight animate-pulse break-words px-2">
+          READY
+        </div>
+        <div id="remainInfo" class="text-xs text-slate-400 mt-1 font-bold">
+          読み込み中...
+        </div>
+      </div>
+    </div>
+
+    <!-- 右カラム：操作パネル -->
+    <div class="flex flex-col gap-3 lg:gap-6">
+      
+      <!-- メイン操作 -->
+      <div class="bg-white rounded-2xl shadow p-4 ring-1 ring-slate-100">
+        
+        <!-- スタートボタンを一番上に配置（スマホでの操作性向上） -->
+        <button id="startBtn" class="w-full py-4 mb-4 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 text-white font-black text-2xl shadow-lg shadow-orange-100 transform transition-all active:scale-95 hover:shadow-xl hover:from-rose-400 hover:to-orange-400 disabled:opacity-50 disabled:cursor-not-allowed tracking-widest">
+          START !
+        </button>
+
+        <div class="flex flex-wrap gap-2 items-center justify-between">
+          <div class="flex gap-2">
+            <!-- 音声スイッチ -->
+            <button id="soundBtn" class="flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition-all bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
+              <span class="text-base">🔊</span> ON
+            </button>
+            <!-- 重複スイッチ -->
+            <button id="dupBtn" class="flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition-all bg-blue-100 text-blue-700 hover:bg-blue-200">
+              <span class="text-base">🔁</span> 重複あり
+            </button>
+          </div>
+          <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 font-bold text-xs hover:bg-slate-200 transition-colors">
+            リセット
+          </button>
+        </div>
+      </div>
+
+      <!-- 入力エリア -->
+      <div class="bg-white rounded-2xl shadow p-4 ring-1 ring-slate-100">
+        <label class="block text-slate-700 font-bold mb-2 flex justify-between items-center text-sm">
+          <span>📝 項目リスト</span>
+          <span class="text-[10px] font-normal text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">自動保存</span>
+        </label>
+        <textarea id="items" class="w-full h-32 p-3 rounded-xl border-2 border-slate-100 focus:border-indigo-400 focus:ring-0 transition-colors resize-y text-slate-700 text-sm font-medium leading-relaxed bg-slate-50 focus:bg-white" placeholder="ここに入力した項目がルーレットになります&#13;&#10;1行に1つずつ入力してください&#13;&#10;例）&#13;&#10;１班&#13;&#10;２班&#13;&#10;３班"></textarea>
+      </div>
+
+      <!-- 履歴 -->
+      <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+        <h3 class="font-bold text-slate-500 mb-2 flex items-center gap-2 text-sm">
+          <span>📜</span> 履歴
+        </h3>
+        <div class="max-h-28 overflow-y-auto pr-1">
+          <ol id="history" class="space-y-1.5 list-none text-slate-600 font-medium text-sm">
+            <!-- JSで生成 -->
+          </ol>
+          <div id="historyEmpty" class="text-slate-400 text-xs py-2 text-center">履歴はまだありません</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+(() => {
+  // DOM要素
+  const canvas = document.getElementById("wheel");
+  const ctx = canvas.getContext("2d");
+  const startBtn = document.getElementById("startBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const itemsTA = document.getElementById("items");
+  const resultEl = document.getElementById("result");
+  const remainInfo = document.getElementById("remainInfo");
+  const historyEl = document.getElementById("history");
+  const historyEmpty = document.getElementById("historyEmpty");
+  const soundBtn = document.getElementById("soundBtn");
+  const dupBtn = document.getElementById("dupBtn");
+
+  // 設定
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const radius = Math.min(W, H) * 0.46; // 少し大きくして迫力を出す
+  
+  // マテリアルカラーパレット（少し彩度調整）
+  const COLORS = [
+    "#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0", "#F3E5F5", 
+    "#E0F7FA", "#FFF8E1", "#FBE9E7", "#E1F5FE", "#F1F8E9"
+  ];
+  const TEXT_COLOR = "#334155";
+
+  // localStorage keys
+  const LS_ITEMS = "roulette_items_v6"; // バージョン維持
+  const LS_SOUND = "roulette_sound_v3";
+  const LS_DUP   = "roulette_dup_v3";
+
+  // 状態変数
+  let baseItems = [];
+  let poolItems = [];
+  let history = [];
+  let angle = 0;
+  let spinning = false;
+
+  // --- Audio ---
+  let soundOn = (localStorage.getItem(LS_SOUND) ?? "on") === "on";
+  
+  const updateSoundBtn = () => {
+    if (soundOn) {
+      soundBtn.innerHTML = '<span class="text-base">🔊</span> ON';
+      soundBtn.className = "flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition-all bg-emerald-100 text-emerald-700 hover:bg-emerald-200";
+    } else {
+      soundBtn.innerHTML = '<span class="text-base">🔇</span> OFF';
+      soundBtn.className = "flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-200 text-slate-500 hover:bg-slate-300";
+    }
+  };
+
+  const beep = (freq=880, type="square", duration=0.05) => {
+    if (!soundOn) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ac = new AC();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.frequency.value = freq;
+    osc.type = type;
+    gain.gain.setValueAtTime(0.1, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start();
+    osc.stop(ac.currentTime + duration);
+  };
+
+  // --- 重複設定 ---
+  let dupOn = (localStorage.getItem(LS_DUP) ?? "on") === "on";
+  
+  const updateDupBtn = () => {
+    if (dupOn) {
+      dupBtn.innerHTML = '<span class="text-base">🔁</span> あり';
+      dupBtn.className = "flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition-all bg-blue-100 text-blue-700 hover:bg-blue-200";
+    } else {
+      dupBtn.innerHTML = '<span class="text-base">🚫</span> なし';
+      dupBtn.className = "flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition-all bg-orange-100 text-orange-700 hover:bg-orange-200";
+    }
+  };
+
+  // --- データ処理 ---
+  const parseBaseItems = () => {
+    baseItems = itemsTA.value.split("\n").map(s => s.trim()).filter(Boolean);
+    if (baseItems.length === 0) baseItems = ["未入力"];
+  };
+
+  const updateRemainInfo = () => {
+    const total = baseItems[0] === "未入力" ? 0 : baseItems.length;
+    const remain = poolItems[0] === "未入力" ? 0 : poolItems.length;
+    remainInfo.textContent = `候補: ${remain} / ${total}`;
+    
+    const disabled = spinning || remain === 0 || poolItems[0] === "未入力";
+    startBtn.disabled = disabled;
+    itemsTA.disabled = spinning;
+    resetBtn.disabled = spinning;
+    
+    if (disabled && !spinning) {
+        startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+  };
+
+  const renderHistory = () => {
+    historyEl.innerHTML = "";
+    if (history.length === 0) {
+      historyEmpty.style.display = "block";
+      return;
+    }
+    historyEmpty.style.display = "none";
+    history.forEach((item, i) => {
+      const li = document.createElement("li");
+      li.className = "bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center justify-between animate-[fadeIn_0.3s_ease-out]";
+      li.innerHTML = `
+        <span class="flex-1 truncate font-bold text-slate-700">${item}</span>
+        <span class="ml-2 inline-block w-5 h-5 rounded-full bg-slate-100 text-slate-400 text-[10px] flex items-center justify-center font-bold">#${history.length - i}</span>
+      `;
+      historyEl.appendChild(li);
+    });
+  };
+
+  // --- 描画 ---
+  const drawWheel = () => {
+    ctx.clearRect(0, 0, W, H);
+    
+    // 背景装飾
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 15, 0, Math.PI * 2);
+    ctx.fillStyle = "#f1f5f9";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    const items = poolItems;
+    const n = items.length;
+    const slice = (Math.PI * 2) / n;
+
+    for (let i = 0; i < n; i++) {
+      const start = angle + i * slice;
+      const end   = start + slice;
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, radius, start, end);
+      ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length];
+      ctx.fill();
+      
+      ctx.lineWidth = 4; // 境界線を太くしてポップに
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      ctx.save();
+      ctx.rotate(start + slice / 2);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = TEXT_COLOR;
+
+      // 文字サイズ自動調整
+      let label = items[i];
+      if (label.length > 20) label = label.slice(0, 19) + "…";
+
+      const maxW = radius - 80; // マージン調整
+      const chord = 2 * (radius - 40) * Math.sin(slice / 2);
+      const maxH = chord * 0.7; // 少し余裕を持たせる
+
+      let fontSize = 160; 
+      if (fontSize > maxH) fontSize = maxH;
+      
+      ctx.font = `bold ${fontSize}px 'M PLUS Rounded 1c', sans-serif`;
+      let metrics = ctx.measureText(label);
+      if (metrics.width > maxW) {
+        fontSize = fontSize * (maxW / metrics.width);
+      }
+      fontSize = Math.max(fontSize, 20); // 最小サイズ確保
+
+      ctx.font = `bold ${fontSize}px 'M PLUS Rounded 1c', sans-serif`;
+      ctx.shadowColor = "rgba(255,255,255,0.8)";
+      ctx.shadowBlur = 4;
+      ctx.fillText(label, radius - 40, 0);
+      ctx.restore();
+    }
+
+    // 中心
+    ctx.beginPath();
+    ctx.arc(0, 0, 45, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.stroke();
+
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "30px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowBlur = 0;
+    ctx.fillText("★", 0, 4);
+
+    ctx.restore();
+
+    // 針
+    ctx.save();
+    ctx.translate(cx, cy - radius - 25);
+    
+    // 影
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.lineTo(-15, -20);
+    ctx.lineTo(15, -20);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
+    ctx.fill();
+
+    // 本体
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-20, -40);
+    ctx.lineTo(20, -40);
+    ctx.closePath();
+    ctx.fillStyle = "#f43f5e";
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(0, -40, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#be123c";
+    ctx.fill();
+
+    ctx.restore();
+  };
+
+  const getSelectedIndex = () => {
+    const n = poolItems.length;
+    const slice = (Math.PI * 2) / n;
+    const pointer = -Math.PI / 2;
+    let relativeAngle = (pointer - angle) % (Math.PI * 2);
+    if (relativeAngle < 0) relativeAngle += Math.PI * 2;
+    return Math.floor(relativeAngle / slice);
+  };
+
+  const spin = () => {
+    if (spinning) return;
+    if (poolItems.length === 0 || poolItems[0] === "未入力") return;
+
+    spinning = true;
+    updateRemainInfo();
+    resultEl.textContent = "抽選中...";
+    resultEl.classList.add("text-slate-400");
+    resultEl.classList.remove("text-indigo-600", "scale-110");
+
+    const baseTurns = (Math.random() * 2 + 3) * Math.PI * 2; 
+    const targetExtra = Math.random() * Math.PI * 2;
+    const startAngle = angle;
+    const targetAngle = startAngle + baseTurns + targetExtra;
+    
+    const duration = 4000;
+    const t0 = performance.now();
+    let lastIdx = -1;
+
+    const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
+
+    const frame = (now) => {
+      const elapsed = now - t0;
+      const t = Math.min(1, elapsed / duration);
+      const eased = easeOutCubic(t);
+
+      angle = startAngle + (targetAngle - startAngle) * eased;
+
+      const currentIdx = getSelectedIndex();
+      if (currentIdx !== lastIdx && t < 1) {
+        if (lastIdx !== -1) {
+            const speed = (1 - t); 
+            beep(800 + speed * 400, "triangle", 0.03); 
+        }
+        lastIdx = currentIdx;
+      }
+
+      drawWheel();
+
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        finishSpin();
+      }
+    };
+    requestAnimationFrame(frame);
+  };
+
+  const finishSpin = () => {
+    spinning = false;
+    const finalIdx = getSelectedIndex();
+    const picked = poolItems[finalIdx];
+
+    beep(1200, "sine", 0.1);
+    setTimeout(() => beep(1600, "sine", 0.2), 100);
+
+    resultEl.textContent = picked;
+    resultEl.classList.remove("text-slate-400");
+    resultEl.classList.add("text-indigo-600", "scale-110");
+
+    history.unshift(picked);
+    renderHistory();
+
+    if (!dupOn) {
+      poolItems.splice(finalIdx, 1);
+      if (poolItems.length === 0) {
+        setTimeout(() => alert("すべての項目が出ました！\n再度遊ぶにはリセットしてください。"), 500);
+        poolItems = [];
+      }
+    }
+
+    updateRemainInfo();
+    drawWheel();
+  };
+
+  const hardReset = () => {
+    if (!confirm("履歴を消去して初期状態に戻しますか？")) return;
+    parseBaseItems();
+    poolItems = baseItems[0] === "未入力" ? [] : [...baseItems];
+    history = [];
+    angle = 0;
+    
+    resultEl.textContent = "READY";
+    resultEl.classList.remove("scale-110");
+    
+    renderHistory();
+    updateRemainInfo();
+    drawWheel();
+  };
+
+  startBtn.addEventListener("click", spin);
+  resetBtn.addEventListener("click", hardReset);
+
+  soundBtn.addEventListener("click", () => {
+    soundOn = !soundOn;
+    localStorage.setItem(LS_SOUND, soundOn ? "on" : "off");
+    updateSoundBtn();
+  });
+
+  dupBtn.addEventListener("click", () => {
+    dupOn = !dupOn;
+    localStorage.setItem(LS_DUP, dupOn ? "on" : "off");
+    updateDupBtn();
+    parseBaseItems();
+    poolItems = baseItems[0] === "未入力" ? [] : [...baseItems];
+    angle = 0;
+    resultEl.textContent = "READY";
+    updateRemainInfo();
+    drawWheel();
+  });
+
+  itemsTA.addEventListener("input", () => {
+    localStorage.setItem(LS_ITEMS, itemsTA.value);
+    parseBaseItems();
+    poolItems = baseItems[0] === "未入力" ? [] : [...baseItems];
+    angle = 0;
+    resultEl.textContent = "READY";
+    updateRemainInfo();
+    drawWheel();
+  });
+
+  const savedItems = localStorage.getItem(LS_ITEMS);
+  if (savedItems) {
+      itemsTA.value = savedItems;
+  } else {
+      itemsTA.value = "１班\n２班\n３班\n４班\n５班\n６班";
+  }
+
+  updateSoundBtn();
+  updateDupBtn();
+  parseBaseItems();
+  poolItems = baseItems[0] === "未入力" ? [] : [...baseItems];
+  renderHistory();
+  updateRemainInfo();
+  drawWheel();
+
+})();
+</script>
+</body>
+</html>

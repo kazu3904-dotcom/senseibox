@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>プリセット付きタイムタイマー</title>
+  <style>
+    :root {
+      --red: #e74c3c;
+      --gray: #ecf0f1;
+      --text: #2c3e50;
+      --bg: #fdfdfd;
+      --btn-bg: #fff;
+      --btn-border: #e0e0e0;
+      --btn-hover: #f5f5f5;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --reset: #95a5a6;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 5px 0;
+      color: var(--text);
+      opacity: 0.8;
+      font-weight: 700;
+    }
+
+    /* メイン表示エリア（円と時間を横並びにするコンテナ） */
+    .timer-main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px; /* 円と数字の間隔 */
+      margin: 10px 0 20px;
+      width: 100%;
+    }
+
+    /* タイマー円グラフ表示 */
+    .dial-wrapper {
+      position: relative;
+      width: min(240px, 45vw);
+      height: min(240px, 45vw);
+      flex-shrink: 0;
+    }
+
+    .dial {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      /* 初期状態: 全面赤 */
+      background: conic-gradient(var(--red) 0deg 360deg);
+      box-shadow: 0 8px 24px rgba(231, 76, 60, 0.25);
+      position: relative;
+      transition: box-shadow 0.3s ease;
+    }
+
+    /* デジタル表示（右側） */
+    .time-display {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .time-text {
+      font-size: 64px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    /* スマホなどで画面が狭いときは縦並びに戻す */
+    @media (max-width: 500px) {
+      .timer-main {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .time-text {
+        font-size: 56px;
+      }
+    }
+
+    /* プリセットボタン（グリッドレイアウト） */
+    .preset-section {
+      width: 100%;
+    }
+    
+    /* 3列レイアウト（固定プリセット用） */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+    
+    /* 4列レイアウト（調整ボタン用） */
+    .adjust-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .preset-btn {
+      background: var(--btn-bg);
+      border: 1px solid var(--btn-border);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+      height: 48px; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .preset-btn:hover {
+      background: var(--btn-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      border-color: #cbd5e1;
+    }
+
+    .preset-btn:active {
+      transform: translateY(0);
+      background: #f1f5f9;
+      box-shadow: none;
+    }
+
+    /* 追加・減少ボタン */
+    .add-btn {
+      color: #3498db;
+      background-color: #f8fbff;
+      border-color: #dbeafe;
+      font-size: 14px; /* 少し文字サイズ調整 */
+    }
+    .add-btn:hover {
+      background-color: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    /* 手動入力エリア */
+    .custom-input {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #f8f9fa;
+      padding: 12px 24px;
+      border-radius: 16px;
+      margin-top: 5px;
+      border: 1px solid #edf2f7;
+    }
+
+    input[type="number"] {
+      width: 60px;
+      font-size: 20px;
+      padding: 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      text-align: center;
+      outline: none;
+      font-weight: bold;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.2s;
+    }
+    input[type="number"]:focus { border-color: #3498db; }
+
+    .unit { font-size: 14px; font-weight: bold; color: #94a3b8; }
+
+    /* 操作ボタン（スタート・ストップなど） */
+    .controls {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .ctrl-btn {
+      flex: 1;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      color: white;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn:hover {
+        filter: brightness(1.05);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    .ctrl-btn:active { transform: translateY(1px); box-shadow: none; }
+    
+    .btn-start { background-color: var(--success); }
+    .btn-pause { background-color: var(--warning); }
+    .btn-reset { background-color: var(--reset); }
+
+    .hidden { display: none !important; }
+
+    /* 時間切れのアニメーション */
+    @keyframes flash {
+      0%, 100% { color: #e74c3c; opacity: 1; }
+      50% { color: #c0392b; opacity: 0.5; }
+    }
+    
+    @keyframes pulse-shadow {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+        70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); }
+    }
+
+    .times-up-text {
+      animation: flash 1s infinite;
+    }
+    
+    .times-up-dial {
+        animation: pulse-shadow 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>タイムタイマー</h1>
+
+    <!-- メイン表示エリア：円と数字を横並びにする -->
+    <div class="timer-main">
+      <div class="dial-wrapper">
+        <div class="dial" id="dial"></div>
+      </div>
+      <div class="time-display">
+        <div class="time-text" id="displayTime">00:00</div>
+      </div>
+    </div>
+
+    <!-- プリセットボタン -->
+    <div class="preset-section">
+      <!-- メインプリセット (3列) -->
+      <div class="preset-grid">
+        <button class="preset-btn js-preset" data-min="1">1分</button>
+        <button class="preset-btn js-preset" data-min="2">2分</button>
+        <button class="preset-btn js-preset" data-min="3">3分</button>
+        
+        <button class="preset-btn js-preset" data-min="5">5分</button>
+        <button class="preset-btn js-preset" data-min="10">10分</button>
+        <button class="preset-btn js-preset" data-min="15">15分</button>
+        
+        <button class="preset-btn js-preset" data-min="30">30分</button>
+        <button class="preset-btn js-preset" data-min="45">45分</button>
+        <!-- 60分を削除したため空欄 -->
+        <div style="width: 100%;"></div> 
+      </div>
+      
+      <!-- 調整ボタン (4列) -->
+      <div class="adjust-grid">
+        <button class="preset-btn add-btn js-add" data-add="-1">-1分</button>
+        <button class="preset-btn add-btn js-add" data-add="1">+1分</button>
+        <!-- 秒調整を追加 -->
+        <button class="preset-btn add-btn js-add-sec" data-add-sec="-10">-10秒</button>
+        <button class="preset-btn add-btn js-add-sec" data-add-sec="10">+10秒</button>
+      </div>
+    </div>
+
+    <!-- 手動入力エリア（細かい修正用） -->
+    <div class="custom-input">
+      <input type="number" id="inputMin" min="0" max="999" value="0" aria-label="分">
+      <span class="unit">分</span>
+      <input type="number" id="inputSec" min="0" max="59" value="0" aria-label="秒">
+      <span class="unit">秒</span>
+    </div>
+
+    <!-- 操作ボタン -->
+    <div class="controls">
+      <button class="ctrl-btn btn-start" id="startBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        スタート
+      </button>
+      <button class="ctrl-btn btn-pause hidden" id="pauseBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        一時停止
+      </button>
+      <button class="ctrl-btn btn-reset" id="resetBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+        リセット
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* 要素の取得 */
+    const dial = document.getElementById('dial');
+    const displayTime = document.getElementById('displayTime');
+    const inputMin = document.getElementById('inputMin');
+    const inputSec = document.getElementById('inputSec');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const presetBtns = document.querySelectorAll('.js-preset');
+    const addBtns = document.querySelectorAll('.js-add');
+    const addSecBtns = document.querySelectorAll('.js-add-sec');
+
+    /* 変数定義 */
+    let totalMs = 0;       // 設定された合計時間(ms)
+    let remainingMs = 0;   // 残り時間(ms)
+    let isRunning = false; // 動作中フラグ
+    let lastTime = 0;      // アニメーション用前回時刻
+    let animationFrameId = null;
+    
+    // アラーム音管理用
+    let alarmCtx = null;
+    let alarmTimeout = null;
+
+    /* --- 関数定義 --- */
+
+    function render() {
+      // 1. デジタル時計表示 (00:00)
+      const totalSeconds = Math.ceil(remainingMs / 1000);
+      // 秒数が負になっても表示が崩れないように0以上で計算
+      const safeTotalSeconds = Math.max(0, totalSeconds);
+      const m = Math.floor(safeTotalSeconds / 60);
+      const s = safeTotalSeconds % 60;
+      displayTime.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+      // 2. 円グラフ表示 (赤色の扇形)
+      // totalMsが0のときは100%グレーにする
+      if (totalMs <= 0) {
+        dial.style.background = 'var(--gray)';
+        return;
+      }
+
+      const elapsed = totalMs - remainingMs;
+      const ratio = Math.max(0, Math.min(1, elapsed / totalMs));
+      const deg = ratio * 360;
+
+      // 視覚的調整: conic-gradientで円を描画
+      dial.style.background = `conic-gradient(var(--gray) 0deg ${deg}deg, var(--red) ${deg}deg 360deg)`;
+
+      if (remainingMs <= 0 && totalMs > 0 && !isRunning) {
+        displayTime.classList.add('times-up-text');
+        dial.classList.add('times-up-dial');
+        dial.style.background = 'var(--gray)';
+      } else {
+        displayTime.classList.remove('times-up-text');
+        dial.classList.remove('times-up-dial');
+      }
+    }
+
+    function loop(timestamp) {
+      if (!isRunning) return;
+      if (!lastTime) lastTime = timestamp;
+
+      const delta = timestamp - lastTime;
+      lastTime = timestamp;
+
+      remainingMs -= delta;
+
+      if (remainingMs <= 0) {
+        remainingMs = 0;
+        render();
+        finishTimer();
+      } else {
+        render();
+        animationFrameId = requestAnimationFrame(loop);
+      }
+    }
+
+    // AudioContextの初期化（ブラウザの自動再生ポリシー対策）
+    function initAudio() {
+        if (!alarmCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                alarmCtx = new AudioContext();
+            }
+        }
+        // サスペンド状態なら再開を試みる
+        if (alarmCtx && alarmCtx.state === 'suspended') {
+            alarmCtx.resume().catch(e => console.log(e));
+        }
+    }
+
+    function startTimer() {
+      // ユーザーインタラクション時にAudioを初期化
+      initAudio();
+      
+      stopAlarm(); // アラームが鳴っていたら止める
+      
+      // 時間が0ならスタートしない
+      if (remainingMs <= 0 && totalMs <= 0) return;
+
+      if (remainingMs <= 0) {
+        if(totalMs > 0) {
+            remainingMs = totalMs; // リスタート
+        } else {
+            return;
+        }
+      }
+      
+      isRunning = true;
+      lastTime = 0;
+      
+      startBtn.classList.add('hidden');
+      pauseBtn.classList.remove('hidden');
+      
+      // UI無効化
+      disableInputs(true);
+
+      animationFrameId = requestAnimationFrame(loop);
+    }
+
+    function stopTimer() {
+      isRunning = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      lastTime = 0;
+
+      stopAlarm(); // アラーム停止
+
+      startBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+      
+      // UI有効化
+      disableInputs(false);
+      render(); // 点滅などを解除するために再描画
+    }
+
+    function resetTimer() {
+      stopTimer();
+      updateFromInput();
+    }
+
+    function finishTimer() {
+      stopTimer();
+      playAlarm();
+    }
+
+    // 入力エリアの有効/無効切り替え
+    function disableInputs(disabled) {
+        inputMin.disabled = disabled;
+        inputSec.disabled = disabled;
+    }
+
+    /* プリセット・入力処理 (イベントハンドラから呼ばれる関数) */
+    
+    function setPreset(minutes) {
+      stopTimer(); // アラームも止まる
+      inputMin.value = minutes;
+      inputSec.value = 0;
+      
+      totalMs = minutes * 60 * 1000;
+      remainingMs = totalMs;
+      render();
+    }
+
+    // 秒単位で時間を加算・減算し、全体を再計算する関数
+    function addTimeValue(secondsToAdd) {
+      // 1. 現在の入力値からトータル秒数を計算
+      let m = parseInt(inputMin.value) || 0;
+      let s = parseInt(inputSec.value) || 0;
+      let totalSec = m * 60 + s;
+      
+      // 2. 加算・減算
+      totalSec += secondsToAdd;
+      
+      // 0未満にならないようにする
+      if (totalSec < 0) totalSec = 0;
+      
+      // 3. 新しい分・秒を計算してInputに戻す
+      const newMin = Math.floor(totalSec / 60);
+      const newSec = totalSec % 60;
+      
+      inputMin.value = newMin;
+      inputSec.value = newSec;
+      
+      // 4. タイマーへの反映
+      const addMs = secondsToAdd * 1000;
+
+      if (!isRunning) {
+        // 停止中は設定時間そのものを更新
+        updateFromInput();
+      } else {
+        // 動作中は残り時間と合計時間を操作
+        // 残り時間を増減させる
+        remainingMs += addMs;
+        totalMs += addMs;
+        
+        // マイナスになったら終了
+        if (remainingMs <= 0) {
+             remainingMs = 0;
+             render();
+             finishTimer();
+        } else {
+             render();
+        }
+      }
+    }
+
+    function updateFromInput() {
+      stopTimer();
+
+      let m = parseInt(inputMin.value);
+      let s = parseInt(inputSec.value);
+      
+      // 入力値バリデーション
+      if (isNaN(m) || m < 0) m = 0;
+      if (isNaN(s) || s < 0) s = 0;
+      
+      // 60秒以上は繰り上げ
+      if (s >= 60) {
+          m += Math.floor(s / 60);
+          s = s % 60;
+      }
+
+      inputMin.value = m;
+      inputSec.value = s;
+      
+      totalMs = (m * 60 + s) * 1000;
+      if (totalMs < 0) totalMs = 0;
+      remainingMs = totalMs;
+      
+      render();
+    }
+
+    /* --- アラーム音管理 (Web Audio API) --- */
+
+    function stopAlarm() {
+      if (alarmCtx) {
+          // 何もしない（自動停止待ち）
+      }
+      if (alarmTimeout) {
+        clearTimeout(alarmTimeout);
+        alarmTimeout = null;
+      }
+    }
+
+    function playAlarm() {
+      stopAlarm(); 
+      
+      if (!alarmCtx || alarmCtx.state === 'closed') {
+         const AudioContext = window.AudioContext || window.webkitAudioContext;
+         if (!AudioContext) return;
+         alarmCtx = new AudioContext();
+      }
+      
+      if (alarmCtx.state === 'suspended') {
+          alarmCtx.resume().catch(e => console.error(e));
+      }
+
+      const now = alarmCtx.currentTime;
+      const duration = 4; // 鳴動時間（秒）
+      const interval = 1.2; // 次の音までの間隔
+
+      for (let i = 0; i < duration; i += interval) {
+          createBeep(now + i);
+      }
+
+      alarmTimeout = setTimeout(() => {
+      }, duration * 1000 + 500);
+    }
+    
+    function createBeep(startTime) {
+        if (!alarmCtx) return;
+        
+        const osc = alarmCtx.createOscillator();
+        const gain = alarmCtx.createGain();
+        
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, startTime);
+        
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+        
+        osc.connect(gain);
+        gain.connect(alarmCtx.destination);
+        
+        osc.start(startTime);
+        osc.stop(startTime + 0.6);
+        
+        const osc2 = alarmCtx.createOscillator();
+        const gain2 = alarmCtx.createGain();
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(1760, startTime + 0.15);
+        
+        gain2.gain.setValueAtTime(0, startTime + 0.15);
+        gain2.gain.linearRampToValueAtTime(0.1, startTime + 0.2);
+        gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+        
+        osc2.connect(gain2);
+        gain2.connect(alarmCtx.destination);
+        
+        osc2.start(startTime + 0.15);
+        osc2.stop(startTime + 0.6);
+    }
+
+    /* --- イベント設定 --- */
+
+    // 1. スタート/一時停止/リセットボタン
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', stopTimer);
+    resetBtn.addEventListener('click', resetTimer);
+
+    // 2. プリセットボタン
+    presetBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        initAudio();
+        const min = parseInt(btn.getAttribute('data-min'), 10);
+        setPreset(min);
+      });
+    });
+
+    // 3. 追加・減少ボタン（分単位）
+    addBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        initAudio();
+        const addMin = parseInt(btn.getAttribute('data-add'), 10);
+        addTimeValue(addMin * 60); // 秒に変換して渡す
+      });
+    });
+
+    // 4. 追加・減少ボタン（秒単位）
+    addSecBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        initAudio();
+        const addSec = parseInt(btn.getAttribute('data-add-sec'), 10);
+        addTimeValue(addSec);
+      });
+    });
+
+    // 5. 入力欄
+    inputMin.addEventListener('change', updateFromInput);
+    inputSec.addEventListener('change', updateFromInput);
+
+    // 初期化: 3分セット
+    setPreset(3);
+
+  </script>
+</body>
+</html>

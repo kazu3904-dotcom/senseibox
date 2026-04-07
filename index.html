@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>せんせい箱 〜先生の毎日をちょっと楽にするアプリ集〜</title>
+    <!-- Google Fonts for Typography and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content">
+            <h1><span class="material-symbols-rounded logo-icon">inventory_2</span> せんせい箱</h1>
+            <p class="subtitle">〜先生の毎日をちょっと楽にするアプリ集〜</p>
+            <!-- <div class="announcement">
+                <span class="badge">お知らせがあればここに記述します</span>
+            </div> -->
+        </div>
+    </header>
+
+    <nav class="tabs-nav">
+        <button class="tab-btn active" data-target="tab-class">
+            <span class="material-symbols-rounded">groups</span> 授業・学級
+        </button>
+        <button class="tab-btn" data-target="tab-office">
+            <span class="material-symbols-rounded">plagiarism</span> 所見・事務
+        </button>
+        <button class="tab-btn" data-target="tab-info">
+            <span class="material-symbols-rounded">campaign</span> 情報・連絡
+        </button>
+    </nav>
+
+    <main class="main-container">
+        <p class="intro-text">
+            このサイト「せんせい箱」は、小学校・中学校の先生が授業や学級活動、校務で使える便利なアプリをまとめたポータルサイトです。<br>
+            学級活動で使えるタイマーやくじ、クイズ、通知表の記載文例など業務効率化ツールなどを、無料で公開しています。<br><br>
+            今後も、現場で役立つツールを随時追加していきます。
+        </p>
+        
+        <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="アプリを検索...（例：くじ、タイマー）">
+        </div>
+
+        <!-- 授業・学級 タブコンテンツ -->
+        <section id="tab-class" class="tab-content active">
+            <h2 class="section-title"><span class="material-symbols-rounded">groups</span> 授業・学級経営</h2>
+            <div class="app-grid" id="class-apps-container">
+                <!-- JSで動的に追加されます -->
+            </div>
+        </section>
+
+        <!-- 所見・事務 タブコンテンツ -->
+        <section id="tab-office" class="tab-content">
+            <h2 class="section-title"><span class="material-symbols-rounded">plagiarism</span> 業務支援・所見作成</h2>
+            <div class="app-grid" id="office-apps-container">
+                <!-- JSで動的に追加されます -->
+            </div>
+        </section>
+
+        <!-- 情報・連絡 タブコンテンツ -->
+        <section id="tab-info" class="tab-content">
+            <h2 class="section-title"><span class="material-symbols-rounded">campaign</span> 情報・連絡</h2>
+            <div class="info-list" id="info-apps-container">
+                <!-- JSで動的に追加されます -->
+            </div>
+        </section>
+
+        <footer class="site-footer">
+            <div class="footer-block">
+                <h3>このサイトについて</h3>
+                <p>このサイトは、先生の授業・学級経営・校務をサポートするための無料Webアプリをまとめたものです。授業づくり、所見作成、業務効率化などに役立つツールを厳選して紹介しています。すべてブラウザで利用でき、インストール不要で手軽に使えます。</p>
+            </div>
+            
+            <div class="footer-block">
+                <h3>プライバシーポリシー</h3>
+                <p>当サイトでは、Google AdSenseを利用しています。広告配信事業者は、ユーザーの興味に応じた広告を表示するためにCookieを使用することがあります。Cookieを無効にする設定やGoogle AdSenseに関する詳細は、Googleの広告ポリシーをご確認ください。</p>
+            </div>
+            
+            <div class="footer-block">
+                <h3>利用規約</h3>
+                <p>当サイトの内容は教育活動の補助を目的として提供しています。利用は自己責任でお願いいたします。当サイトの利用により生じた損害については一切責任を負いません。</p>
+            </div>
+        </footer>
+    </main>
+
+    <!-- アプリ一覧のデータを読み込み -->
+    <script src="app-data.js"></script>
+
+    <script>
+        // DOM要素が読み込まれたらレンダリングを実行
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAppGrid('class-apps', 'class-apps-container');
+            renderAppGrid('office-apps', 'office-apps-container');
+            renderInfoList('info-apps', 'info-apps-container');
+        });
+
+        // アプリカードを生成してコンテナに挿入する関数
+        function renderAppGrid(dataKey, containerId) {
+            const container = document.getElementById(containerId);
+            const apps = appData[dataKey];
+            
+            apps.forEach(app => {
+                const targetAttr = app.isExternal ? 'target="_blank" rel="noopener noreferrer"' : '';
+                const cardHtml = `
+                    <a href="${app.link}" class="app-card" ${targetAttr}>
+                        <div class="icon-circle"><span class="material-symbols-rounded">${app.icon}</span></div>
+                        <h3>${app.title}</h3>
+                        <p>${app.desc}</p>
+                    </a>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        // 情報・連絡リストを生成してコンテナに挿入する関数
+        function renderInfoList(dataKey, containerId) {
+            const container = document.getElementById(containerId);
+            const apps = appData[dataKey];
+            
+            apps.forEach(app => {
+                const targetAttr = app.isExternal ? 'target="_blank" rel="noopener noreferrer"' : '';
+                const iconClass = app.iconClass ? app.iconClass : 'info-icon-base';
+                
+                // 改行文字を <br> に変換して表示
+                const descHtml = app.desc.replace(/\n/g, '<br>');
+                
+                const cardHtml = `
+                    <a href="${app.link}" class="info-card" ${targetAttr}>
+                        <div class="info-icon ${iconClass}">
+                            <span class="material-symbols-rounded">${app.icon}</span>
+                        </div>
+                        <div class="info-text">
+                            <h3>${app.title}</h3>
+                            <p>${descHtml}</p>
+                        </div>
+                    </a>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        // タブ切り替え機能
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+        
+        // 検索機能 (タブを跨がず、全体から検索して合致するものを表示)
+        const searchInput = document.getElementById('search-input');
+        
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            
+            // すべてのアプリカードと情報カードを取得
+            const allCards = document.querySelectorAll('.app-card, .info-card');
+            
+            allCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if(text.includes(term)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

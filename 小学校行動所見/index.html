@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学校 通知表・指導要録 「行動所見」作成プロ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel (JSX変換用) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ----------------------------------------------------------------------
+        // アイコンコンポーネント (Lucide互換SVG)
+        // ----------------------------------------------------------------------
+        const IconBase = ({ children, className }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const BookOpen = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </IconBase>
+        );
+
+        const Settings = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </IconBase>
+        );
+
+        const Sparkles = ({ className }) => (
+            <IconBase className={className}>
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+                <path d="M5 3v4"></path>
+                <path d="M9 3v4"></path>
+                <path d="M3 5h4"></path>
+                <path d="M3 9h4"></path>
+            </IconBase>
+        );
+
+        const PenTool = ({ className }) => (
+            <IconBase className={className}>
+                <path d="m12 19 7-7 3 3-7 7-3-3z"></path>
+                <path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                <path d="m2 2 7.586 7.586"></path>
+                <circle cx="11" cy="11" r="2"></circle>
+            </IconBase>
+        );
+
+        const FileText = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" x2="8" y1="13" y2="13"></line>
+                <line x1="16" x2="8" y1="17" y2="17"></line>
+                <line x1="10" x2="8" y1="9" y2="9"></line>
+            </IconBase>
+        );
+
+        const Check = ({ className }) => (
+            <IconBase className={className}>
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </IconBase>
+        );
+
+        const Copy = ({ className }) => (
+            <IconBase className={className}>
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+            </IconBase>
+        );
+
+        const RefreshCw = ({ className }) => (
+            <IconBase className={className}>
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                <path d="M8 16H3v5"></path>
+            </IconBase>
+        );
+
+        // ----------------------------------------------------------------------
+        // データセット
+        // ----------------------------------------------------------------------
+
+        const CATEGORIES = [
+            "基本的な生活習慣",
+            "健康・体力の向上",
+            "自主・自律",
+            "責任感",
+            "創意工夫",
+            "思いやり・協力",
+            "生命尊重・自然愛護",
+            "勤労・奉仕",
+            "公正・公平",
+            "公共心・公徳心"
+        ];
+
+        const GRADE_RANGES = [
+            { id: "low", label: "1・2年 (低学年)" },
+            { id: "mid", label: "3・4年 (中学年)" },
+            { id: "high", label: "5・6年 (高学年)" }
+        ];
+
+        const LENGTH_OPTIONS = [
+            { id: "short", label: "短め (1文)", limit: 40 },
+            { id: "medium", label: "普通 (2-3文)", limit: 80 },
+            { id: "long", label: "長め (詳細)", limit: 120 }
+        ];
+
+        const STYLE_OPTIONS = [
+            { id: "keigo", label: "通知表 (敬体)", desc: "〜です・ます" },
+            { id: "joutai", label: "指導要録 (常体)", desc: "〜である・だ" }
+        ];
+
+        const SHOKEN_DB = {
+            "基本的な生活習慣": {
+                low: [
+                "朝の挨拶がとても元気よく、教室の雰囲気を明るくしてくれました。身の回りの整理整頓もしっかりとできています。",
+                "「おはようございます」と大きな声で挨拶ができ、一日を気持ちよくスタートできています。使った物の後片付けも丁寧です。",
+                "時間を守って行動することができ、チャイムが鳴る前に着席する姿が立派でした。",
+                "忘れ物をせず、毎日の準備をきちんと行うことができました。衣服の調節も自分で考え、健康に過ごせました。"
+                ],
+                mid: [
+                "時間を意識して行動することができ、次の授業の準備もスムーズに行えました。礼儀正しい挨拶も習慣づいています。",
+                "TPOに応じた言葉遣いや挨拶ができ、誰に対しても礼儀正しく接する姿は学級の手本となりました。",
+                "基本的な生活習慣が定着しており、身の回りの整理整頓を自主的に行うことで、落ち着いて学習に取り組めました。",
+                "規則正しい生活を心がけ、毎日元気に登校できました。係活動などでも時間を守って責任を持って行動しました。"
+                ],
+                high: [
+                "最高学年として、自律的な生活態度が身についています。挨拶や礼儀作法においても下級生の良き模範となりました。",
+                "時間を有効に使い、見通しを持って行動することができました。節度ある態度は、周囲からの信頼を集めています。",
+                "場に応じた適切な言動を心がけ、自らを律して行動する姿に精神的な成長を感じました。",
+                "自己管理能力が高く、提出物の期限を守ることや、整理整頓を徹底することで、学習環境を自ら整えています。"
+                ]
+            },
+            "健康・体力の向上": {
+                low: [
+                "休み時間には校庭へ出て元気に遊び、体を動かすことを楽しんでいました。給食も好き嫌いなく食べています。",
+                "体育の学習に意欲的に取り組み、新しい運動遊びにも進んで挑戦する姿が見られました。",
+                "手洗いやうがいを忘れずに行い、元気に毎日を過ごすことができました。",
+                "外遊びが大好きな活発なお子さんです。走るのが速くなり、鬼ごっこなどで友達と仲良く体を動かしていました。"
+                ],
+                mid: [
+                "進んで運動に取り組み、体力の向上に努めました。苦手な種目にも諦めずに挑戦する粘り強さがあります。",
+                "健康に関心を持ち、規則正しい生活リズムを保つことができました。体育の授業ではチームの仲間と協力して活動しました。",
+                "自分なりの目標を持って運動に取り組み、持久走大会（または体育的行事）では最後まで走り抜くことができました。",
+                "心身ともに健康であることを意識し、毎日の生活を元気に送ることができました。"
+                ],
+                high: [
+                "自らの健康課題を理解し、体力の保持増進に努める姿が見られました。部活動や体育の授業でもリーダーシップを発揮しました。",
+                "心身の健康管理に気を配り、常に万全の状態で学校生活に臨む姿勢は立派です。",
+                "自己の記録更新を目指して黙々とトレーニングに励む姿には、強い精神力を感じました。",
+                "運動の楽しさを味わうだけでなく、安全に配慮しながら仲間と協力して活動を進めることができました。"
+                ]
+            },
+            "自主・自律": {
+                low: [
+                "よいと思うことは進んで行い、最後まで頑張る姿が見られました。",
+                "自分の係の仕事を忘れずに取り組むことができ、最後までやり遂げる姿勢が育っています。",
+                "先生に言われなくても、自分から進んで手伝いをしたり、次の準備をしたりすることができました。",
+                "自分で決めた目標に向かって、毎日コツコツと努力を続けることができました。"
+                ],
+                mid: [
+                "自らの目標を明確に持ち、それに向かって計画的に努力する姿に成長を感じました。",
+                "係活動や当番活動において、自分の役割を自覚し、責任を持って最後までやり遂げることができました。",
+                "自分で考えて行動する場面が増え、困っている友達がいると自ら声をかける優しさが見られました。",
+                "学級のために何ができるかを考え、自分から進んで提案し実行する行動力があります。"
+                ],
+                high: [
+                "夢や希望を持ち、より高い目標を立てて努力する姿勢は、周囲に良い影響を与えています。",
+                "当面の課題に対して根気強く取り組み、困難な壁にぶつかっても自力で乗り越えようとする強さがあります。",
+                "自分自身を客観的に見つめ、改善点を見出して次につなげる力は、高学年として頼もしい限りです。",
+                "周囲の状況を判断し、今自分が何をすべきかを考えて自律的に行動することができました。"
+                ]
+            },
+            "責任感": {
+                low: [
+                "当番の仕事を忘れずに行い、自分の役割をしっかりと果たすことができました。",
+                "みんなとの約束を守り、係の活動にも責任を持って取り組む姿が見られました。",
+                "自分がやらなければならないことは後回しにせず、しっかりと行うことができました。",
+                "失敗しても正直に話し、次はどうすればよいかを考えることができました。"
+                ],
+                mid: [
+                "自分の言動に責任を持ち、任された役割を誠意を持って行う姿が印象的でした。",
+                "グループ活動ではリーダーとして責任を持って話し合いをまとめ、みんなの意見を大切にしました。",
+                "係の仕事を工夫しながら行い、クラスのみんなが気持ちよく過ごせるように尽力しました。",
+                "約束やきまりを守ることはもちろん、周囲への影響も考えて責任ある行動がとれました。"
+                ],
+                high: [
+                "自分の役割と責任を深く自覚し、誰かが見ていなくても誠実に仕事に取り組む姿勢は信頼されています。",
+                "委員会活動（またはクラブ活動）において、最高学年としての責任を果たし、学校全体のために貢献しました。",
+                "言動に一貫性があり、周囲からの信頼が厚いです。困難な状況でも逃げずに立ち向かう責任感の強さがあります。",
+                "集団の中での自分の立ち位置を理解し、全体の利益を考えて責任ある行動をとることができました。"
+                ]
+            },
+            "創意工夫": {
+                low: [
+                "図工の時間には、材料を工夫して面白い作品を作り上げることができました。",
+                "生活科の学習で、自分なりに考えて新しい遊びを考え出すなど、工夫する楽しさを味わっていました。",
+                "困ったことがあった時に、どうすればよいかを自分で考えて解決しようとする姿が見られました。",
+                "学習用具の使い方を工夫し、自分なりに使いやすく整理することができました。"
+                ],
+                mid: [
+                "課題意識を持って学習に取り組み、自分なりの方法で問題を解決しようとする工夫が見られました。",
+                "係活動では、みんなが楽しめるような新しい企画を考え、クラスを盛り上げました。",
+                "総合的な学習の時間において、調べ方を工夫したり、発表資料を見やすくまとめたりする力が伸びています。",
+                "日常の些細なことにも疑問を持ち、自分なりに仮説を立てて検証しようとする探究心があります。"
+                ],
+                high: [
+                "進んで新しい考えや方法を求め、生活をより良くするための工夫を提案することができました。",
+                "既成概念にとらわれない柔軟な発想で、学級の問題解決に向けてユニークなアイデアを出してくれました。",
+                "ICT機器を効果的に活用し、情報を整理・分析して説得力のある発表を行う創意工夫が見られました。",
+                "現状に満足せず、常に「もっと良くするにはどうすればよいか」を考え、改善していく実行力があります。"
+                ]
+            },
+            "思いやり・協力": {
+                low: [
+                "友達に優しく接し、困っている人がいるとすぐに助けてあげる姿が見られました。",
+                "みんなと仲良く遊ぶことができ、おもちゃや道具を譲り合う優しさを持っています。",
+                "相手の顔を見て話を聞き、温かい言葉をかけることができるので、友達から慕われています。",
+                "誰に対しても親切に接し、クラスの雰囲気を温かくしてくれました。"
+                ],
+                mid: [
+                "相手の気持ちや立場を理解して行動することができ、トラブルが起きても話し合いで解決しようと努めました。",
+                "グループ活動では、友達の意見を尊重しながら協力して作業を進めることができました。",
+                "困っている下級生に優しく声をかけ、手助けをする姿にお兄さん・お姉さんらしさを感じました。",
+                "自分のことだけでなく、周りの人のことも考えて行動できる思いやりの心を持っています。"
+                ],
+                high: [
+                "異なる意見や立場を尊重し、互いの良さを認め合いながら力を合わせて活動することができました。",
+                "集団生活の向上に努め、誰に対しても公平に思いやりのある態度で接することで、良好な人間関係を築いています。",
+                "常に感謝の心を持ち、周囲への配慮を忘れない謙虚な姿勢は、多くの人から信頼されています。",
+                "リーダーとして全体をまとめるだけでなく、一人一人の気持ちに寄り添い、誰もが安心して過ごせる雰囲気を作りました。"
+                ]
+            },
+            "生命尊重・自然愛護": {
+                low: [
+                "校庭の草花や虫に興味を持ち、生き物を優しく大切に扱うことができました。",
+                "植物の水やりを進んで行い、成長を楽しみに観察する姿が見られました。",
+                "自然に親しみ、季節の変化を感じ取って言葉や絵で表現することができました。",
+                "小さな命も大切にし、生き物を傷つけないように気をつける優しさがあります。"
+                ],
+                mid: [
+                "生命や自然の素晴らしさに感動し、動植物の世話を責任を持って行うことができました。",
+                "理科の観察を通して、生命の不思議さや尊さを実感し、自他の生命を大切にする意識が高まりました。",
+                "環境問題に関心を持ち、身近な自然を守るために自分ができることを考え、実行しました。",
+                "飼育・栽培活動に熱心に取り組み、生き物の成長を喜ぶとともに、命の大切さを学びました。"
+                ],
+                high: [
+                "自然を愛護し、かけがえのない生命を尊重する態度が、日々の言動に表れています。",
+                "SDGsなどの地球規模の課題にも目を向け、持続可能な社会のために自分ができることを考えました。",
+                "自他の生命を大切にし、互いに支え合って生きることの尊さを深く理解しています。",
+                "動植物だけでなく、資源を大切にするなど、環境への配慮を行動で示すことができました。"
+                ]
+            },
+            "勤労・奉仕": {
+                low: [
+                "掃除の時間には、床を隅々まで丁寧に拭くなど、一生懸命取り組むことができました。",
+                "係の仕事を張り切って行い、みんなのために働くことを楽しんでいる様子でした。",
+                "自分から進んで手伝いを見つけ、先生や友達に喜ばれることを進んで行いました。",
+                "給食当番の仕事を手際よく行い、クラスの準備が早く終わるように協力しました。"
+                ],
+                mid: [
+                "働くことの大切さを知り、誰に言われなくても進んで掃除や作業に取り組むことができました。",
+                "みんなのために働くことに喜びを感じ、委員会活動などでも積極的に役割を果たしました。",
+                "地道な作業も嫌がらずに黙々と行う姿は、クラスのみんなの模範となりました。",
+                "係活動の枠を超えて、困っている人がいれば手伝うなど、奉仕の精神が育っています。"
+                ],
+                high: [
+                "人や社会の役に立つことを考え、学校行事の準備や片付けなど、進んで仕事を引き受けました。",
+                "働くことの意義を理解し、自分の役割を果たすことで集団に貢献する充実感を味わっていました。",
+                "ボランティア活動にも関心を持ち、地域や学校のために自分ができることを実践しました。",
+                "誰も見ていないところでも手を抜かず、誠実に仕事に取り組む姿勢には頭が下がります。"
+                ]
+            },
+            "公正・公平": {
+                low: [
+                "誰とでも仲良く遊ぶことができ、仲間外れをつくらないように気をつけていました。",
+                "好き嫌いで態度を変えず、みんなに優しく接することができました。",
+                "自分の好き嫌いにとらわれず、係決めや遊びのルール決めなどで公平に行動できました。",
+                "正しいことは正しいと言える勇気を持ち、友達に対しても平等に接しました。"
+                ],
+                mid: [
+                "相手の立場に立って考え、誰に対しても公平な態度で接することができました。",
+                "友達の意見を分け隔てなく聞き、話し合い活動では公正な判断をするよう努めました。",
+                "勝敗にこだわらず、ルールを守って正々堂々と行動する姿が清々しいです。",
+                "特定の友達だけでなく、色々な人と協力して活動し、公平さを大切にしていました。"
+                ],
+                high: [
+                "誰に対しても差別や偏見を持つことなく、正義を大切にして行動する姿勢は素晴らしいです。",
+                "公正・公平な視点を持ち、意見が対立した際にも客観的に判断して調整する力があります。",
+                "自分の利益だけでなく、全体の公平性を重視し、正しいと思うことを貫く強さを持っています。",
+                "多様な価値観を認め、一人一人を尊重しながら公平に接することで、信頼関係を築きました。"
+                ]
+            },
+            "公共心・公徳心": {
+                low: [
+                "みんなが使うものを大切にし、約束やきまりを守って生活することができました。",
+                "廊下を静かに歩く、トイレのスリッパを揃えるなど、みんなが気持ちよく過ごせるように気をつけました。",
+                "物を大切に扱い、落書きをしないなど、公共物を大事にする心が育っています。",
+                "チャイムが鳴ったら席に着くなど、学校のルールをしっかりと守ることができました。"
+                ],
+                mid: [
+                "約束や社会のきまりを守って公徳を大切にし、人に迷惑をかけないよう心がけて生活しました。",
+                "公共の場でのマナーを意識し、電車やバスでの移動教室でも礼儀正しく行動できました。",
+                "みんなが使う道具の整理整頓を率先して行い、次の人が使いやすいように配慮しました。",
+                "集団のルールを守るだけでなく、守れていない友達がいれば優しく注意することもできました。"
+                ],
+                high: [
+                "規則を尊重し、公徳を大切にするとともに、学校や人々の役に立つことを進んで行いました。",
+                "社会の一員としての自覚を持ち、公共の福祉に反しないよう、責任ある行動をとることができました。",
+                "我が国の文化や伝統を大切にし、地域社会や学校の発展のために貢献しようとする意欲が見られました。",
+                "常に周囲への配慮を忘れず、公共心を持って行動する姿は、下級生の良き手本となりました。"
+                ]
+            }
+        };
+
+        // ----------------------------------------------------------------------
+        // ヘルパー関数: 常体変換ロジック
+        // ----------------------------------------------------------------------
+
+        const convertToJoutai = (text) => {
+            let converted = text;
+            
+            // 文末の置換ルール (順序が重要です)
+            const rules = [
+                { pattern: /ていました。/g, replace: 'ていた。' },
+                { pattern: /てきました。/g, replace: 'てきた。' },
+                { pattern: /できました。/g, replace: 'できた。' },
+                { pattern: /ありました。/g, replace: 'あった。' },
+                { pattern: /ました。/g, replace: 'た。' },
+                { pattern: /ています。/g, replace: 'ている。' },
+                { pattern: /ています/g, replace: 'ている' }, // 文中の接続
+                { pattern: /います。/g, replace: 'いる。' },
+                { pattern: /ありません。/g, replace: 'ない。' },
+                { pattern: /ないです。/g, replace: 'ない。' },
+                { pattern: /でしょう。/g, replace: 'だろう。' },
+                
+                // 形容詞 (「い」で終わる) + です -> 「い」で終わる
+                { pattern: /([ぁ-んァ-ヶ]い)です。/g, replace: '$1。' },
+                
+                // 形容動詞・名詞 + でした -> であった
+                { pattern: /([ぁ-んァ-ヶ])でした。/g, replace: '$1であった。' },
+                
+                // 形容動詞・名詞 + です -> である
+                { pattern: /です。/g, replace: 'である。' },
+                
+                // 文中の接続助詞的な「〜ますが、」 -> 「〜るが、」など
+                { pattern: /ますが、/g, replace: 'るが、' },
+                { pattern: /ですが、/g, replace: 'だが、' },
+            ];
+
+            rules.forEach(rule => {
+                converted = converted.replace(rule.pattern, rule.replace);
+            });
+
+            return converted;
+        };
+
+        const generateDrafts = (category, gradeRange, lengthType, styleMode) => {
+            const templates = SHOKEN_DB[category]?.[gradeRange] || [];
+            if (templates.length === 0) return ["データが見つかりません"];
+
+            const shuffled = [...templates].sort(() => 0.5 - Math.random());
+            
+            const rawDrafts = [];
+
+            // 案1: シンプル
+            rawDrafts.push(shuffled[0]);
+
+            // 案2: 連結または別案
+            if (shuffled[1]) {
+                if (lengthType === 'long') {
+                    rawDrafts.push(`${shuffled[0]}また、${shuffled[1]}`);
+                } else {
+                    rawDrafts.push(shuffled[1]);
+                }
+            } else {
+                rawDrafts.push(shuffled[0]); 
+            }
+
+            // 案3
+            if (shuffled[2]) {
+                if (lengthType === 'long' && shuffled[0] && shuffled[1]) {
+                    rawDrafts.push(`${shuffled[2]}さらに、${shuffled[1]}`);
+                } else {
+                    rawDrafts.push(shuffled[2]);
+                }
+            } else {
+                rawDrafts.push("大変よく頑張りました。");
+            }
+
+            // 文体変換
+            return rawDrafts.map(text => {
+                let processedText = text;
+                if (styleMode === 'joutai') {
+                    processedText = convertToJoutai(text);
+                }
+                return processedText;
+            });
+        };
+
+        // ----------------------------------------------------------------------
+        // メインコンポーネント
+        // ----------------------------------------------------------------------
+
+        function App() {
+            const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+            const [selectedGrade, setSelectedGrade] = useState("low");
+            const [selectedLength, setSelectedLength] = useState("medium");
+            const [styleMode, setStyleMode] = useState("keigo"); 
+            const [results, setResults] = useState([]);
+            const [copiedIndex, setCopiedIndex] = useState(null);
+
+            useEffect(() => {
+                handleGenerate();
+            }, []);
+
+            const handleGenerate = () => {
+                const drafts = generateDrafts(selectedCategory, selectedGrade, selectedLength, styleMode);
+                setResults(drafts);
+                setCopiedIndex(null);
+            };
+
+            const copyToClipboard = (text, index) => {
+                navigator.clipboard.writeText(text);
+                setCopiedIndex(index);
+                setTimeout(() => setCopiedIndex(null), 2000);
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+                    {/* ヘッダー */}
+                    <header className={`p-4 shadow-lg transition-colors ${styleMode === 'keigo' ? 'bg-indigo-600' : 'bg-teal-700'}`}>
+                        <div className="max-w-4xl mx-auto flex items-center gap-3 text-white">
+                            <BookOpen className="w-8 h-8" />
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-bold tracking-wide">小学校 通知表・指導要録 「行動所見」作成プロ</h1>
+                                <p className="text-xs opacity-80 flex items-center gap-1">
+                                    <Settings className="w-3 h-3" />
+                                    モード: {styleMode === 'keigo' ? '通知表 (敬体)' : '指導要録 (常体)'}
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-4xl mx-auto p-6">
+                        
+                        {/* コントロールパネル */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+                            
+                            {/* 文体切り替えタブ */}
+                            <div className="mb-6 bg-slate-100 p-1.5 rounded-lg inline-flex w-full md:w-auto">
+                                {STYLE_OPTIONS.map((option) => (
+                                    <button
+                                        key={option.id}
+                                        onClick={() => setStyleMode(option.id)}
+                                        className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all flex flex-col items-center ${
+                                            styleMode === option.id
+                                                ? 'bg-white text-slate-800 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        <span>{option.label}</span>
+                                        <span className="text-xs font-normal opacity-70 mt-0.5">{option.desc}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                
+                                {/* 1. 観点選択 */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                        <Sparkles className="w-4 h-4" /> 評価項目
+                                    </label>
+                                    <select 
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                    >
+                                        {CATEGORIES.map((cat) => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* 2. 学年選択 */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                                        対象学年
+                                    </label>
+                                    <div className="relative">
+                                        <select 
+                                            value={selectedGrade}
+                                            onChange={(e) => setSelectedGrade(e.target.value)}
+                                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none"
+                                        >
+                                            {GRADE_RANGES.map((g) => (
+                                                <option key={g.id} value={g.id}>{g.label}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 3. 文字数選択 */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                                        文章量
+                                    </label>
+                                    <div className="flex bg-slate-100 p-1 rounded-lg">
+                                        {LENGTH_OPTIONS.map((len) => (
+                                            <button
+                                                key={len.id}
+                                                onClick={() => setSelectedLength(len.id)}
+                                                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
+                                                    selectedLength === len.id 
+                                                        ? 'bg-white text-indigo-600 shadow-sm' 
+                                                        : 'text-slate-500 hover:text-slate-700'
+                                                }`}
+                                            >
+                                                {len.label.split(' ')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* 生成ボタン */}
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    onClick={handleGenerate}
+                                    className={`flex items-center gap-2 text-white font-bold py-3 px-8 rounded-full shadow-md transition-transform transform hover:-translate-y-0.5 active:translate-y-0 ${
+                                        styleMode === 'keigo' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-teal-600 hover:text-teal-700'
+                                    }`}
+                                >
+                                    <PenTool className="w-5 h-5" />
+                                    所見を作成する
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 結果表示エリア */}
+                        <div className="space-y-4">
+                            <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                                <span className={`p-1 px-3 rounded text-white ${styleMode === 'keigo' ? 'bg-indigo-500' : 'bg-teal-600'}`}>
+                                    {styleMode === 'keigo' ? '通知表モード' : '指導要録モード'}
+                                </span>
+                                <span className="text-sm font-normal text-slate-500 ml-auto">※ボタンを押してコピーできます</span>
+                            </h2>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                {results.map((text, index) => (
+                                    <div 
+                                        key={index} 
+                                        className={`group relative bg-white border-l-4 rounded-r-lg shadow-sm hover:shadow-md transition-all p-5 ${
+                                            styleMode === 'keigo' ? 'border-indigo-500' : 'border-teal-500'
+                                        }`}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <FileText className={`w-5 h-5 mt-1 flex-shrink-0 ${styleMode === 'keigo' ? 'text-indigo-400' : 'text-teal-400'}`} />
+                                            <p className="text-slate-800 leading-relaxed pr-10">
+                                                {text}
+                                            </p>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={() => copyToClipboard(text, index)}
+                                            className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
+                                                copiedIndex === index 
+                                                    ? 'bg-green-100 text-green-600' 
+                                                    : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                                            }`}
+                                            title="コピー"
+                                        >
+                                            {copiedIndex === index ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 再生成ボタン（下部） */}
+                            <div className="flex justify-center mt-8">
+                                <button
+                                    onClick={handleGenerate}
+                                    className={`flex items-center gap-2 font-medium transition-colors ${
+                                        styleMode === 'keigo' ? 'text-indigo-600 hover:text-indigo-800' : 'text-teal-600 hover:text-teal-800'
+                                    }`}
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                    別のパターンを生成する
+                                </button>
+                            </div>
+                        </div>
+
+                    </main>
+
+                    <footer className="mt-12 bg-slate-100 py-6 border-t border-slate-200">
+                        <div className="max-w-4xl mx-auto text-center text-slate-500 text-sm">
+                            <p>参考資料: アップロードされた文例集および評価項目表</p>
+                            <p className="mt-2">※生成された文章は必ず確認・調整してご使用ください。</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

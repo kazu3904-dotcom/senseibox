@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>こころのメーター（0-10）</title>
+  <!-- 画面を画像化するためのライブラリ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --bg:#fbf6ea;
+      --pink:#f3b6d8;
+      --blue:#9fbbe9;
+      --ink:#555;
+      --card:#fff;
+      --border:#e6d7b3;
+
+      /* html2canvas対策: 計算済みの色定義 */
+      --pink-bg: #fae2ef;    
+      --pink-bd: #f6cce4;    
+      --pink-val: #f5c2de;   
+      
+      --blue-bg: #d9e4f6;    
+      --blue-bd: #bccff0;    
+      --blue-val: #b7cbec;   
+    }
+    body{
+      margin:0; font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background:var(--bg); color:var(--ink);
+      display:flex; flex-direction:column; min-height:100vh;
+      touch-action: none; /* ドラッグの誤作動防止 */
+      overflow: hidden; /* スクロール防止 */
+    }
+    header{
+      display:flex; align-items:center; justify-content:center;
+      padding:14px 10px;
+      flex-shrink: 0;
+    }
+    .titleBox{
+      width:min(720px, 92vw);
+      border:3px solid #f2c15a;
+      border-radius:14px;
+      background:#fff7df;
+      text-align:center;
+      padding:10px 12px;
+      font-size:24px;
+      letter-spacing: .08em;
+      font-weight:700;
+    }
+    main{
+      flex:1;
+      display:grid;
+      grid-template-columns: 1fr min(600px, 92vw) 1fr;
+      grid-template-rows: auto 1fr auto;
+      align-items:center;
+      gap:12px;
+      padding: 0 12px 20px;
+      max-height: 100vh;
+    }
+    .panel{
+      background:var(--card);
+      border:4px solid #f2c15a22;
+      border-radius:18px;
+      padding:10px;
+      width:min(180px, 25vw);
+      margin:auto;
+      box-shadow:0 6px 16px rgba(0,0,0,.06);
+      transition: transform 0.1s;
+    }
+    .panel h3{
+      margin:0 0 8px;
+      font-size:18px;
+      text-align:center;
+      padding:6px 4px;
+      border-radius:10px;
+      background:#eee;
+      font-weight:800;
+    }
+    .panel.pink h3{ background: var(--pink-bg); border:2px solid var(--pink-bd); }
+    .panel.blue h3{ background: var(--blue-bg); border:2px solid var(--blue-bd); }
+
+    .value{
+      font-size:64px;
+      font-weight:900;
+      text-align:center;
+      padding:10px 4px;
+      border-radius:14px;
+      border:4px solid #ddd;
+      user-select:none;
+      line-height: 1;
+    }
+    .panel.pink .value{ border-color: var(--pink-val); color: var(--ink); }
+    .panel.blue .value{ border-color: var(--blue-val); color: var(--ink); }
+
+    .center-area{
+      grid-column: 2;
+      grid-row: 1 /span 3;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height: 100%;
+    }
+    
+    svg{
+      width:100%;
+      height:auto;
+      max-height:60vh;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+      touch-action: none;
+      cursor: grab;
+    }
+    svg:active {
+      cursor: grabbing;
+    }
+
+    .controls-area {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding-top: 10px;
+    }
+
+    .hint{
+      text-align:center;
+      font-size:14px;
+      opacity:.8;
+      background: rgba(255,255,255,0.6);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .buttons{
+      display:flex; gap:12px; justify-content:center;
+      flex-wrap:wrap;
+    }
+    button{
+      font-size:15px;
+      padding:10px 16px;
+      border-radius:12px;
+      border:2px solid #e6d7b3;
+      background:#fff;
+      color: #665c4a;
+      font-weight:700;
+      cursor: pointer;
+      box-shadow: 0 2px 0 #e6d7b3;
+      transition: all 0.1s;
+    }
+    button:active{ transform: translateY(2px); box-shadow: none; }
+    button#copyBtn { background: #eef7ff; border-color: #bad6f2; box-shadow: 0 2px 0 #bad6f2; color: #4a668a;}
+
+    /* モーダル（画像表示用） */
+    #imageModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 15px;
+    }
+    #imageModal.show { display: flex; }
+    #generatedImage {
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border: 4px solid #fff;
+    }
+    .modal-msg {
+      color: #fff;
+      font-weight: bold;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 16px;
+      border-radius: 20px;
+    }
+    .modal-close {
+      padding: 8px 20px;
+      background: #fff;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    @media (max-width: 700px){
+      main{ 
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr auto;
+        gap: 8px;
+      }
+      .center-area {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        padding: 10px 0;
+      }
+      .panel {
+        width: 90%;
+        grid-row: 1;
+      }
+      .panel.pink { grid-column: 1; }
+      .panel.blue { grid-column: 2; }
+      .controls-area { grid-row: 3; }
+      .value { font-size: 48px; }
+      .titleBox { font-size: 20px; padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="titleBox">こころの　メーター (10)</div>
+  </header>
+
+  <main id="captureArea">
+    <section class="panel pink">
+      <h3>かんがえ 1</h3>
+      <div class="value" id="v1">4</div>
+    </section>
+
+    <section class="center-area">
+      <svg viewBox="0 0 600 520" id="heartSvg" aria-label="こころのメーター">
+        <!-- 外枠 -->
+        <path id="heartPath"
+          d="M300 486
+             C300 486 40 330 40 185
+             C40 95 95 40 185 40
+             C245 40 285 70 300 100
+             C315 70 355 40 415 40
+             C505 40 560 95 560 185
+             C560 330 300 486 300 486Z"
+          fill="#fff" stroke="#ffffff" stroke-width="20" />
+
+        <!-- クリップ定義 -->
+        <defs>
+          <clipPath id="clipLeft">
+            <rect id="clipRectLeft" x="0" y="0" width="240" height="520"></rect>
+          </clipPath>
+          <clipPath id="clipRight">
+            <rect id="clipRectRight" x="240" y="0" width="360" height="520"></rect>
+          </clipPath>
+        </defs>
+
+        <!-- 左色 -->
+        <path
+          d="M300 486
+             C300 486 40 330 40 185
+             C40 95 95 40 185 40
+             C245 40 285 70 300 100
+             C315 70 355 40 415 40
+             C505 40 560 95 560 185
+             C560 330 300 486 300 486Z"
+          fill="var(--pink)" clip-path="url(#clipLeft)"/>
+
+        <!-- 右色 -->
+        <path
+          d="M300 486
+             C300 486 40 330 40 185
+             C40 95 95 40 185 40
+             C245 40 285 70 300 100
+             C315 70 355 40 415 40
+             C505 40 560 95 560 185
+             C560 330 300 486 300 486Z"
+          fill="var(--blue)" clip-path="url(#clipRight)"/>
+
+        <!-- 境界線とハンドル -->
+        <g id="handleGroup">
+             <line id="dividerLine" x1="240" y1="40" x2="240" y2="480" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity="0.8" />
+             <circle id="handle" cx="240" cy="260" r="18" fill="#fff" stroke="#ddd" stroke-width="3" />
+        </g>
+        
+        <text x="300" y="510" text-anchor="middle" font-size="16" fill="#888" font-weight="bold" style="pointer-events: none;">
+          左右にうごかそう
+        </text>
+      </svg>
+    </section>
+
+    <section class="panel blue">
+      <h3>かんがえ 2</h3>
+      <div class="value" id="v2">6</div>
+    </section>
+
+    <div class="controls-area">
+      <div class="hint">
+        合計が 10 になります
+      </div>
+      <div class="buttons">
+        <button id="resetBtn">5 / 5 にもどす</button>
+        <button id="copyBtn">画像をコピー！</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 画像表示用モーダル -->
+  <div id="imageModal">
+    <div class="modal-msg">画像を長押し(右クリック)してコピー・保存</div>
+    <img id="generatedImage" alt="Generated Image" />
+    <button class="modal-close" onclick="closeModal()">とじる</button>
+  </div>
+
+  <script>
+    const v1El = document.getElementById("v1");
+    const v2El = document.getElementById("v2");
+    const handleGroup = document.getElementById("handleGroup");
+    const dividerLine = document.getElementById("dividerLine");
+    const handle = document.getElementById("handle");
+    const clipLeft = document.getElementById("clipRectLeft");
+    const clipRight = document.getElementById("clipRectRight");
+    const svg = document.getElementById("heartSvg");
+    const modal = document.getElementById("imageModal");
+    const generatedImage = document.getElementById("generatedImage");
+
+    const STORAGE_KEY = "kokoro_meter_10_v1";
+
+    let v1 = load() ?? 4; 
+    let dragging = false;
+
+    function clamp(n, min, max){ return Math.min(max, Math.max(min, n)); }
+
+    function setValues(newV1){
+      v1 = clamp(Math.round(newV1), 0, 10);
+      const v2 = 10 - v1;
+
+      v1El.textContent = v1;
+      v2El.textContent = v2;
+
+      const splitX = (v1 / 10) * 600;
+
+      clipLeft.setAttribute("width", splitX);
+      clipRight.setAttribute("x", splitX);
+      clipRight.setAttribute("width", 600 - splitX);
+
+      const uiX = clamp(splitX, 10, 590);
+      dividerLine.setAttribute("x1", uiX);
+      dividerLine.setAttribute("x2", uiX);
+      handle.setAttribute("cx", uiX);
+    }
+
+    function save(){
+      try{
+        localStorage.setItem(STORAGE_KEY, String(v1));
+      }catch(e){}
+    }
+
+    function closeModal() {
+      modal.classList.remove("show");
+    }
+
+    async function copyToClipboard() {
+      const btn = document.getElementById("copyBtn");
+      const originalText = btn.textContent;
+      
+      if(btn.disabled) return;
+      btn.disabled = true;
+      btn.textContent = "作成中...";
+      btn.style.cursor = "wait";
+
+      try {
+        const canvas = await html2canvas(document.body, {
+          scale: 2,
+          backgroundColor: "#fbf6ea",
+          ignoreElements: (element) => {
+            if(element.classList.contains('controls-area')) return true;
+            if(element.id === 'imageModal') return true;
+            return false;
+          },
+          windowWidth: document.body.scrollWidth,
+          windowHeight: document.body.scrollHeight
+        });
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+             console.error("Blob creation failed");
+             btn.textContent = "失敗";
+             btn.disabled = false;
+             return;
+          }
+
+          try {
+            // クリップボード書き込み試行
+            const item = new ClipboardItem({ "image/png": blob });
+            await navigator.clipboard.write([item]);
+            
+            btn.textContent = "コピーしました！";
+            btn.style.background = "#d4edda";
+            btn.style.borderColor = "#c3e6cb";
+            btn.style.color = "#155724";
+
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.style.background = "#eef7ff";
+              btn.style.borderColor = "#bad6f2";
+              btn.style.color = "#4a668a";
+              btn.disabled = false;
+              btn.style.cursor = "pointer";
+            }, 2000);
+            
+          } catch (err) {
+            console.log("Clipboard write blocked or failed. Fallback to image display.");
+            // 失敗時はモーダル表示
+            const url = URL.createObjectURL(blob);
+            generatedImage.src = url;
+            modal.classList.add("show");
+            
+            btn.textContent = "画像を作成しました";
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.disabled = false;
+              btn.style.cursor = "pointer";
+            }, 1000);
+          }
+        });
+
+      } catch (e) {
+        console.error("html2canvas failed:", e);
+        btn.textContent = "エラー";
+        btn.disabled = false;
+        alert("画像の作成に失敗しました。");
+      }
+    }
+
+    function load(){
+      try{
+        const s = localStorage.getItem(STORAGE_KEY);
+        if(s === null) return null;
+        const n = Number(s);
+        return Number.isFinite(n) ? clamp(n, 0, 10) : null;
+      }catch(e){ return null; }
+    }
+
+    function pointerToV1(clientX){
+      const pt = svg.createSVGPoint();
+      pt.x = clientX; pt.y = 0;
+      const ctm = svg.getScreenCTM();
+      if(!ctm) return v1;
+      const local = pt.matrixTransform(ctm.inverse());
+      const x = clamp(local.x, 0, 600);
+      return Math.round((x / 600) * 10);
+    }
+
+    function onDown(e){
+      dragging = true;
+      const x = (e.touches ? e.touches[0].clientX : e.clientX);
+      setValues(pointerToV1(x));
+      e.preventDefault();
+    }
+    function onMove(e){
+      if(!dragging) return;
+      const x = (e.touches ? e.touches[0].clientX : e.clientX);
+      setValues(pointerToV1(x));
+      e.preventDefault();
+    }
+    function onUp(){
+      if(!dragging) return;
+      dragging = false;
+      save();
+    }
+
+    svg.addEventListener("mousedown", onDown);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+
+    svg.addEventListener("touchstart", onDown, {passive:false});
+    window.addEventListener("touchmove", onMove, {passive:false});
+    window.addEventListener("touchend", onUp);
+
+    document.getElementById("resetBtn").addEventListener("click", ()=>{
+      setValues(5); save();
+    });
+    
+    document.getElementById("copyBtn").addEventListener("click", copyToClipboard);
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    setValues(v1);
+  </script>
+</body>
+</html>

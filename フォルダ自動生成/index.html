@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フォルダ自動作成＆ファイル一括コピーアプリ</title>
+    <!-- JSZip for handling ZIP files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #334155;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            resize: vertical;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 15px;
+            background-color: white;
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--primary-color);
+            background-color: #f1f5f9;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #status {
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .loading { color: #f59e0b; }
+        
+        #file-name-display {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>フォルダ自動作成＆ファイルコピー</h1>
+    <p class="subtitle">テキストから複数フォルダを作成し、指定したファイルをすべてのフォルダに一括コピーするZIPファイルを生成します。</p>
+
+    <div class="form-group">
+        <label for="folder-names">フォルダ名（1行につき1フォルダ）:</label>
+        <textarea id="folder-names" placeholder="フォルダA&#10;フォルダB&#10;フォルダC"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>全フォルダに入れるファイル:</label>
+        <div class="file-upload">
+            <label for="file-input" class="file-upload-label">
+                📂 クリックしてファイルを選択（複数可）
+            </label>
+            <input type="file" id="file-input" multiple>
+        </div>
+        <div id="file-name-display">ファイルが選択されていません</div>
+    </div>
+
+    <button id="generate-btn">👉 ZIPファイルを生成する</button>
+
+    <div id="status"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const generateBtn = document.getElementById('generate-btn');
+    const statusDiv = document.getElementById('status');
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            if(e.target.files.length === 1) {
+                fileNameDisplay.textContent = `選択中: ${e.target.files[0].name}`;
+            } else {
+                fileNameDisplay.textContent = `選択中: ${e.target.files.length} 個のファイル`;
+            }
+        } else {
+            fileNameDisplay.textContent = 'ファイルが選択されていません';
+        }
+    });
+
+    generateBtn.addEventListener('click', async () => {
+        const folderNamesText = document.getElementById('folder-names').value;
+        const files = fileInput.files;
+
+        // Validation
+        const folderNames = folderNamesText.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        
+        if (folderNames.length === 0) {
+            showStatus('⚠️ フォルダ名を1つ以上入力してください。', 'error');
+            return;
+        }
+
+        if (files.length === 0) {
+            showStatus('⚠️ コピーするファイルを選択してください。', 'error');
+            return;
+        }
+
+        showStatus('⏳ ZIPファイルを生成中...', 'loading');
+        generateBtn.disabled = true;
+
+        try {
+            const zip = new JSZip();
+
+            // Create folders and add files to each folder
+            for (const folderName of folderNames) {
+                const folder = zip.folder(folderName);
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    folder.file(file.name, file);
+                }
+            }
+
+            // Generate ZIP
+            const blob = await zip.generateAsync({ type: 'blob' });
+            
+            // Create Download Link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated_folders.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showStatus('✅ ZIPファイルの生成とダウンロードが完了しました！', 'success');
+        } catch (error) {
+            console.error(error);
+            showStatus('❌ エラーが発生しました。', 'error');
+        } finally {
+            generateBtn.disabled = false;
+        }
+    });
+
+    function showStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = type;
+    }
+</script>
+
+</body>
+</html>

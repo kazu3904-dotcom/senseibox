@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Page Manager - Premium PDF Editor</title>
+    <meta name="description" content="A beautiful and intuitive tool to reorder, rotate, and delete PDF pages.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PDF-Lib -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- SortableJS for Drag and Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <!-- Phosphor Icons for UI -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- CSS and JS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <i class="ph-fill ph-file-pdf"></i>
+                <h1>PDF Studio</h1>
+            </div>
+            <p>PDFのページを自由に削除、回転、並び替え。アップロード後、直感的に操作できます。</p>
+        </header>
+
+        <main class="app-main">
+            <!-- Upload Area -->
+            <div id="upload-area" class="upload-area">
+                <input type="file" id="file-input" accept="application/pdf" hidden>
+                <div class="upload-content">
+                    <div class="upload-icon-wrapper">
+                        <i class="ph ph-upload-simple"></i>
+                    </div>
+                    <h2>ここにPDFをドラッグ＆ドロップ</h2>
+                    <p>または</p>
+                    <button id="browse-btn" class="primary-btn">ファイルを選択</button>
+                </div>
+            </div>
+
+            <!-- Workspace Area (Hidden initially) -->
+            <div id="workspace-area" class="workspace-area hidden">
+                <div class="toolbar">
+                    <button class="icon-btn" id="add-pdf-btn" title="別のPDFを追加">
+                        <i class="ph ph-plus"></i>
+                        <span>ファイル追加</span>
+                    </button>
+                    <div class="toolbar-actions">
+                        <button class="secondary-btn" id="reset-btn">
+                            <i class="ph ph-arrow-counter-clockwise"></i>
+                            リセット
+                        </button>
+                        <button class="primary-btn" id="export-btn">
+                            <i class="ph ph-download-simple"></i>
+                            PDFを保存
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pages-grid-container">
+                    <div id="pages-grid" class="pages-grid">
+                        <!-- Pages will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+
+        <!-- Global Drop Overlay for adding files -->
+        <div id="global-drop-overlay" class="global-drop-overlay hidden">
+            <div class="upload-icon-wrapper">
+                <i class="ph ph-file-plus"></i>
+            </div>
+            <h2>ドロップしてページを追加</h2>
+        </div>
+
+        <!-- ここに「せんせい箱」を追加 -->
+        <footer style="text-align:right; font-size:11px; color:#aaa; margin-top:12px; padding:0 12px 8px 0;">
+            せんせい箱
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
